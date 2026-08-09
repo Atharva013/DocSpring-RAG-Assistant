@@ -1,4 +1,4 @@
-# DocSpring PDF Chat
+# DocSpring 
 
 A Retrieval-Augmented Generation (RAG) chatbot that lets you upload a single PDF and have a conversation with it — powered end-to-end by Azure AI services.
 
