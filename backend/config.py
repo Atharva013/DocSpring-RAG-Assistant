@@ -13,15 +13,15 @@ class Settings(BaseSettings):
     azure_storage_container_name: str = "pdf-uploads"
 
     # Azure Document Intelligence
-    azure_doc_intelligence_endpoint: str = ""
-    azure_doc_intelligence_key: str = ""
+    azure_document_intelligence_endpoint: str = ""
+    azure_document_intelligence_key: str = ""
 
     # Azure OpenAI
     azure_openai_endpoint: str = ""
     azure_openai_key: str = ""
+    azure_openai_api_version: str = "2024-08-01-preview"
     azure_openai_chat_deployment: str = ""
     azure_openai_embedding_deployment: str = ""
-    azure_openai_api_version: str = "2024-08-01-preview"
 
     # Azure AI Search
     azure_search_endpoint: str = ""
@@ -31,7 +31,11 @@ class Settings(BaseSettings):
     # App
     max_upload_size_mb: int = 20
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 
 @lru_cache
