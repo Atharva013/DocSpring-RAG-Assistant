@@ -8,8 +8,9 @@ from pydantic import BaseModel, Field
 class UploadResponse(BaseModel):
     filename: str
     blob_url: str
-    status: str = Field(description="e.g. 'stored', 'previous_session_cleared'")
+    status: str = Field(description="e.g. 'stored', 'indexed'")
     message: str
+    chunks_indexed: int = 0
 
 
 class ChatRequest(BaseModel):
