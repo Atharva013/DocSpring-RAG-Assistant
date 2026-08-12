@@ -1,12 +1,11 @@
 """
-POST /upload — accepts a single PDF, clears the previous session's data,
-stores the new file in Azure Blob Storage, extracts its text via Azure
-Document Intelligence (reading directly from the blob URL), chunks it
-locally, generates embeddings via Azure OpenAI, and indexes it in
-Azure AI Search.
+Session-scoped PDF upload endpoint. Each PDF is stored permanently under
+its chat session, extracted with Azure Document Intelligence, embedded
+with Azure OpenAI, and appended to Azure AI Search.
 """
 
 import logging
+from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
 
@@ -18,15 +17,20 @@ from backend.services import (
     embedding_service,
     extraction_service,
     search_service,
+    session_service,
 )
 
-router = APIRouter(prefix="/upload", tags=["upload"])
+router = APIRouter(tags=["upload"])
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
-@router.post("", response_model=UploadResponse)
-async def upload_pdf(file: UploadFile = File(...)) -> UploadResponse:
+@router.post("/sessions/{session_id}/upload", response_model=UploadResponse)
+async def upload_pdf(session_id: str, file: UploadFile = File(...)) -> UploadResponse:
+    session = session_service.get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found.")
+
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
@@ -38,12 +42,12 @@ async def upload_pdf(file: UploadFile = File(...)) -> UploadResponse:
             detail=f"File exceeds max size of {settings.max_upload_size_mb} MB.",
         )
     file.file.seek(0)
+    document_id = str(uuid4())
+    blob_name = blob_service.build_blob_name(session_id, document_id, file.filename)
 
     try:
-        blob_service.clear_previous_session()
-        blob_url = blob_service.upload_pdf(file)
-        sas_url = blob_service.generate_read_sas_url(file.filename)
-        print("SAS URL:", sas_url)
+        blob_url = blob_service.upload_pdf(file, blob_name=blob_name)
+        sas_url = blob_service.generate_read_sas_url(blob_name)
     except Exception as exc:
         logger.exception("Upload/storage step failed")
         raise HTTPException(status_code=500, detail="Failed to upload file.") from exc
@@ -57,13 +61,27 @@ async def upload_pdf(file: UploadFile = File(...)) -> UploadResponse:
         embeddings = embedding_service.generate_embeddings([c.text for c in chunks])
 
         search_service.ensure_index_exists()
-        search_service.clear_index()
-        chunks_indexed = search_service.index_chunks(chunks, embeddings, file.filename)
+        chunks_indexed = search_service.index_chunks(
+            chunks,
+            embeddings,
+            file.filename,
+            session_id=session_id,
+            document_id=document_id,
+        )
+        session_service.add_document_metadata(
+            session_id,
+            document_id=document_id,
+            filename=file.filename,
+            blob_url=blob_url,
+            chunks_indexed=chunks_indexed,
+        )
     except Exception as exc:
         logger.exception("Processing/indexing step failed")
         raise HTTPException(status_code=500, detail="Failed to process document.") from exc
 
     return UploadResponse(
+        session_id=session_id,
+        document_id=document_id,
         filename=file.filename,
         blob_url=blob_url,
         status="indexed",
