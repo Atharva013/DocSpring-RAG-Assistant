@@ -11,3 +11,4 @@ openai==1.51.0
 
 streamlit==1.38.0
 requests==2.32.3
+azure-search-documents==11.5.1
