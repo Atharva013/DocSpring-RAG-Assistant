@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 
 
 class UploadResponse(BaseModel):
+    session_id: str | None = None
+    document_id: str | None = None
     filename: str
     blob_url: str
     status: str = Field(description="e.g. 'stored', 'indexed'")
