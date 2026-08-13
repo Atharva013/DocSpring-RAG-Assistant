@@ -7,9 +7,10 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.routers import health, sessions, upload
+from backend.routers import chat, health, sessions, upload
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("azure").setLevel(logging.WARNING)
 
 app = FastAPI(
     title="DocSpring PDF Chat API",
@@ -27,3 +28,4 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(sessions.router)
 app.include_router(upload.router)
+app.include_router(chat.router)
