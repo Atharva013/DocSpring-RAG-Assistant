@@ -1,7 +1,7 @@
 """
 DocSpring Streamlit frontend.
 
-Modern multi-session PDF chat UI backed by the FastAPI RAG backend.
+Simple, fast, centered UI for persistent multi-PDF RAG chat.
 """
 
 from __future__ import annotations
@@ -20,222 +20,149 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT_DIR / ".env")
 
 BACKEND_API_URL = os.getenv("BACKEND_API_URL", "http://localhost:8000").rstrip("/")
-REQUEST_TIMEOUT = 120
+FAST_TIMEOUT = 45
+DETAIL_TIMEOUT = 90
+UPLOAD_TIMEOUT = 600
+CHAT_TIMEOUT = 300
 
 
 st.set_page_config(
-    page_title="DocSpring AI",
-    page_icon="🧊",
-    layout="wide",
+    page_title="DocSpring",
+    page_icon="📘",
+    layout="centered",
     initial_sidebar_state="expanded",
 )
 
 
-def inject_styles() -> None:
+def styles() -> None:
     st.markdown(
         """
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        :root {
-            --bg: #070A12;
-            --panel: rgba(14, 20, 35, 0.76);
-            --panel-strong: rgba(21, 30, 52, 0.92);
-            --stroke: rgba(148, 163, 184, 0.22);
-            --text: #E5EEF9;
-            --muted: #8EA4C8;
-            --accent: #60A5FA;
-            --accent-2: #A78BFA;
-            --green: #34D399;
-            --pink: #F472B6;
-        }
-
-        html, body, [class*="css"] {
-            font-family: 'Inter', sans-serif;
-        }
+        html, body, [class*="css"] { font-family: Inter, sans-serif; }
 
         .stApp {
-            color: var(--text);
-            background:
-                radial-gradient(circle at top left, rgba(96, 165, 250, 0.22), transparent 34rem),
-                radial-gradient(circle at top right, rgba(167, 139, 250, 0.18), transparent 32rem),
-                linear-gradient(135deg, #060812 0%, #0B1020 45%, #111827 100%);
+            background: #f6f8fc;
+            color: #111827;
         }
 
         [data-testid="stSidebar"] {
-            background:
-                linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.94));
-            border-right: 1px solid var(--stroke);
-        }
-
-        [data-testid="stSidebar"] * {
-            color: var(--text);
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
         }
 
         .block-container {
-            padding-top: 2.2rem;
-            padding-bottom: 2rem;
-            max-width: 1180px;
+            max-width: 900px;
+            padding-top: 1.4rem;
         }
 
-        .hero {
-            position: relative;
-            overflow: hidden;
-            padding: 1.45rem 1.55rem;
-            border: 1px solid var(--stroke);
-            border-radius: 28px;
-            background:
-                linear-gradient(135deg, rgba(96, 165, 250, 0.16), rgba(167, 139, 250, 0.12)),
-                rgba(15, 23, 42, 0.72);
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+        .top-card {
+            background: linear-gradient(135deg, #111827, #1d4ed8);
+            border-radius: 24px;
+            padding: 26px 28px;
+            color: white;
+            box-shadow: 0 18px 50px rgba(37, 99, 235, .20);
+            margin-bottom: 18px;
         }
 
-        .hero::after {
-            content: "";
-            position: absolute;
-            right: -5rem;
-            top: -6rem;
-            width: 16rem;
-            height: 16rem;
-            border-radius: 999px;
-            background: rgba(96, 165, 250, 0.20);
-            filter: blur(8px);
-        }
-
-        .eyebrow {
-            color: var(--green);
-            text-transform: uppercase;
-            letter-spacing: .16em;
-            font-size: .76rem;
-            font-weight: 800;
-            margin-bottom: .35rem;
-        }
-
-        .hero h1 {
-            font-size: clamp(2.1rem, 4vw, 4.2rem);
-            line-height: .96;
-            letter-spacing: -.06em;
+        .top-card h1 {
             margin: 0;
+            font-size: 2.2rem;
+            letter-spacing: -0.04em;
         }
 
-        .hero p {
-            max-width: 740px;
-            margin: .8rem 0 0;
-            color: var(--muted);
+        .top-card p {
+            color: #dbeafe;
+            margin: 8px 0 0 0;
             font-size: 1rem;
         }
 
-        .glass-card {
-            border: 1px solid var(--stroke);
-            background: var(--panel);
-            border-radius: 24px;
-            padding: 1rem 1.1rem;
-            box-shadow: 0 18px 54px rgba(0, 0, 0, 0.24);
-            backdrop-filter: blur(18px);
-        }
-
-        .metric-grid {
+        .info-row {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: .75rem;
-            margin: 1rem 0;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 12px 0 18px 0;
         }
 
-        .metric-card {
-            border: 1px solid var(--stroke);
-            border-radius: 20px;
-            padding: .9rem 1rem;
-            background: rgba(15, 23, 42, .66);
+        .info-box {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 12px 14px;
         }
 
-        .metric-card span {
-            display: block;
-            color: var(--muted);
+        .info-box span {
+            color: #6b7280;
             font-size: .78rem;
-            font-weight: 600;
-        }
-
-        .metric-card strong {
-            display: block;
-            margin-top: .2rem;
-            font-size: 1.35rem;
-        }
-
-        .doc-chip, .source-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: .35rem;
-            margin: .22rem .28rem .22rem 0;
-            padding: .38rem .62rem;
-            border-radius: 999px;
-            border: 1px solid rgba(96, 165, 250, .28);
-            background: rgba(96, 165, 250, .10);
-            color: #DCEBFF;
-            font-size: .82rem;
-            font-weight: 600;
-        }
-
-        .source-chip {
-            border-color: rgba(52, 211, 153, .28);
-            background: rgba(52, 211, 153, .10);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--muted);
-            border: 1px dashed rgba(148, 163, 184, .28);
-            border-radius: 28px;
-            background: rgba(15, 23, 42, .38);
-        }
-
-        .empty-state h3 {
-            color: var(--text);
-            margin-bottom: .35rem;
-        }
-
-        .session-pill {
-            padding: .68rem .82rem;
-            border-radius: 18px;
-            border: 1px solid var(--stroke);
-            background: rgba(15, 23, 42, .54);
-            margin-bottom: .55rem;
-        }
-
-        .session-pill small {
-            color: var(--muted);
-        }
-
-        div[data-testid="stChatMessage"] {
-            border-radius: 22px;
-            background: rgba(15, 23, 42, 0.48);
-            border: 1px solid rgba(148, 163, 184, 0.12);
-        }
-
-        .stButton > button {
-            border-radius: 999px;
-            border: 1px solid rgba(96, 165, 250, .36);
-            background: linear-gradient(135deg, rgba(96, 165, 250, .18), rgba(167, 139, 250, .16));
-            color: var(--text);
             font-weight: 700;
         }
 
-        .stButton > button:hover {
-            border-color: rgba(96, 165, 250, .72);
-            color: white;
+        .info-box b {
+            display: block;
+            margin-top: 3px;
+            color: #111827;
+            font-size: 1.15rem;
         }
 
-        [data-testid="stFileUploader"] {
-            border: 1px dashed rgba(96, 165, 250, .32);
-            border-radius: 24px;
-            padding: .7rem;
-            background: rgba(15, 23, 42, .46);
+        .doc-list {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 18px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
         }
 
-        @media (max-width: 780px) {
-            .metric-grid {
-                grid-template-columns: 1fr;
-            }
+        .doc-chip, .source-chip {
+            display: inline-block;
+            padding: 6px 10px;
+            margin: 4px 5px 4px 0;
+            border-radius: 999px;
+            font-size: .84rem;
+            font-weight: 700;
+        }
+
+        .doc-chip {
+            color: #1e40af;
+            background: #dbeafe;
+            border: 1px solid #bfdbfe;
+        }
+
+        .source-chip {
+            color: #065f46;
+            background: #d1fae5;
+            border: 1px solid #a7f3d0;
+        }
+
+        .empty {
+            background: white;
+            border: 1px dashed #cbd5e1;
+            color: #64748b;
+            border-radius: 18px;
+            padding: 28px;
+            text-align: center;
+            margin: 12px 0;
+        }
+
+        .small-muted {
+            color: #64748b;
+            font-size: .86rem;
+        }
+
+        div[data-testid="stChatMessage"] {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 18px;
+            padding: 4px;
+        }
+
+        .stButton > button {
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 720px) {
+            .info-row { grid-template-columns: 1fr; }
         }
         </style>
         """,
@@ -243,26 +170,29 @@ def inject_styles() -> None:
     )
 
 
-def api_request(
+def request_api(
     method: str,
     path: str,
     *,
     json: dict[str, Any] | None = None,
     files: dict[str, Any] | None = None,
-    timeout: int = REQUEST_TIMEOUT,
+    timeout: int = FAST_TIMEOUT,
 ) -> Any:
-    url = f"{BACKEND_API_URL}{path}"
     try:
         response = requests.request(
             method,
-            url,
+            f"{BACKEND_API_URL}{path}",
             json=json,
             files=files,
             timeout=timeout,
         )
+    except requests.ReadTimeout as exc:
+        raise RuntimeError(
+            "Backend is still processing or Azure took too long. Try again in a moment."
+        ) from exc
     except requests.RequestException as exc:
         raise RuntimeError(
-            f"Could not reach backend at {BACKEND_API_URL}. Is FastAPI running?"
+            f"Backend is not reachable at {BACKEND_API_URL}. Start FastAPI first."
         ) from exc
 
     if response.status_code >= 400:
@@ -270,231 +200,214 @@ def api_request(
             detail = response.json().get("detail", response.text)
         except ValueError:
             detail = response.text
-        raise RuntimeError(detail)
+        raise RuntimeError(str(detail))
 
-    if not response.content:
-        return None
-    return response.json()
+    return response.json() if response.content else None
 
 
-def format_datetime(value: str | None) -> str:
+def fmt_date(value: str | None) -> str:
     if not value:
         return "—"
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-        return parsed.strftime("%d %b, %I:%M %p")
+        return parsed.strftime("%d %b %I:%M %p")
     except ValueError:
         return value
 
 
-def short_id(value: str | None) -> str:
-    return value[:8] if value else "--------"
+def short(value: str, length: int = 8) -> str:
+    return value[:length]
 
 
-def get_sessions() -> list[dict[str, Any]]:
-    return api_request("GET", "/sessions")
+@st.cache_data(ttl=8, show_spinner=False)
+def cached_sessions() -> list[dict[str, Any]]:
+    return request_api("GET", "/sessions", timeout=FAST_TIMEOUT)
+
+
+def clear_cache() -> None:
+    cached_sessions.clear()
 
 
 def create_session() -> dict[str, Any]:
-    return api_request("POST", "/sessions")
+    clear_cache()
+    return request_api("POST", "/sessions", timeout=FAST_TIMEOUT)
 
 
-def get_session_detail(session_id: str) -> dict[str, Any]:
-    return api_request("GET", f"/sessions/{session_id}")
+def get_detail(session_id: str) -> dict[str, Any]:
+    return request_api("GET", f"/sessions/{session_id}", timeout=DETAIL_TIMEOUT)
 
 
-def upload_pdf(session_id: str, uploaded_file: Any) -> dict[str, Any]:
-    files = {
-        "file": (
-            uploaded_file.name,
-            uploaded_file.getvalue(),
-            "application/pdf",
-        )
-    }
-    return api_request("POST", f"/sessions/{session_id}/upload", files=files, timeout=240)
-
-
-def ask_question(session_id: str, question: str) -> dict[str, Any]:
-    return api_request(
+def upload(session_id: str, file: Any) -> dict[str, Any]:
+    return request_api(
         "POST",
-        f"/sessions/{session_id}/chat",
-        json={"question": question},
-        timeout=180,
+        f"/sessions/{session_id}/upload",
+        files={"file": (file.name, file.getvalue(), "application/pdf")},
+        timeout=UPLOAD_TIMEOUT,
     )
 
 
-def ensure_state() -> None:
-    defaults = {
-        "current_session_id": None,
-        "sessions": [],
-        "session_detail": None,
-        "last_error": None,
-        "uploading": False,
-    }
-    for key, value in defaults.items():
-        st.session_state.setdefault(key, value)
+def chat(session_id: str, question: str) -> dict[str, Any]:
+    return request_api(
+        "POST",
+        f"/sessions/{session_id}/chat",
+        json={"question": question},
+        timeout=CHAT_TIMEOUT,
+    )
 
 
-def refresh_sessions() -> None:
-    st.session_state.sessions = get_sessions()
+def init_state() -> None:
+    st.session_state.setdefault("session_id", None)
+    st.session_state.setdefault("detail", None)
 
 
 def load_session(session_id: str) -> None:
-    st.session_state.current_session_id = session_id
-    st.session_state.session_detail = get_session_detail(session_id)
+    st.session_state.session_id = session_id
+    st.session_state.detail = get_detail(session_id)
 
 
-def render_sidebar() -> None:
+def sidebar() -> None:
     with st.sidebar:
-        st.markdown("### 🧊 DocSpring")
-        st.caption("Persistent multi-PDF RAG on Azure")
+        st.title("📘 DocSpring")
+        st.caption("Multi-PDF RAG Chat")
 
-        if st.button("＋ New research chat", use_container_width=True):
-            try:
+        if st.button("New chat", type="primary", use_container_width=True):
+            with st.spinner("Creating chat..."):
                 session = create_session()
-                refresh_sessions()
                 load_session(session["session_id"])
                 st.rerun()
-            except RuntimeError as exc:
-                st.error(str(exc))
 
         st.divider()
+        st.subheader("Chats")
 
         try:
-            refresh_sessions()
+            sessions = cached_sessions()
         except RuntimeError as exc:
             st.error(str(exc))
             return
 
-        st.markdown("#### Sessions")
-        if not st.session_state.sessions:
-            st.caption("No sessions yet. Create one and start uploading PDFs.")
+        if not sessions:
+            st.caption("No chats yet.")
             return
 
-        for session in st.session_state.sessions:
-            session_id = session["session_id"]
-            title = session.get("title") or "New chat"
-            is_active = session_id == st.session_state.current_session_id
-            label_prefix = "● " if is_active else ""
-            label = f"{label_prefix}{title[:34]}"
-            help_text = (
-                f"{session.get('document_count', 0)} PDFs • "
-                f"Updated {format_datetime(session.get('updated_at'))} • "
-                f"ID {short_id(session_id)}"
-            )
-            if st.button(label, key=f"session-{session_id}", help=help_text, use_container_width=True):
-                load_session(session_id)
-                st.rerun()
+        for item in sessions:
+            label = item.get("title") or "New chat"
+            caption = f"{item.get('document_count', 0)} PDFs · {fmt_date(item.get('updated_at'))}"
+            active = item["session_id"] == st.session_state.session_id
+
+            if st.button(
+                ("● " if active else "") + label[:32],
+                key=item["session_id"],
+                help=caption,
+                use_container_width=True,
+            ):
+                with st.spinner("Opening chat..."):
+                    load_session(item["session_id"])
+                    st.rerun()
 
 
-def render_hero() -> None:
+def landing() -> None:
     st.markdown(
         """
-        <div class="hero">
-            <div class="eyebrow">Azure RAG Lab • Emerson AIML Internship</div>
-            <h1>Chat with PDFs,<br/>without losing the thread.</h1>
-            <p>
-                Upload multiple documents into a persistent session, ask questions across them,
-                and get grounded answers with source-aware retrieval.
-            </p>
+        <div class="top-card">
+            <h1>Ask questions across your PDFs</h1>
+            <p>Create a chat, upload documents, then ask in the box below. Your sessions stay saved.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+        <div class="empty">
+            <b>Start here</b><br/>
+            Click <b>New chat</b> in the sidebar, upload PDFs, and begin asking questions.
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 
-def render_session_overview(detail: dict[str, Any]) -> None:
+def render_header(detail: dict[str, Any]) -> None:
     session = detail["session"]
-    documents = detail["documents"]
+    docs = detail["documents"]
     messages = detail["messages"]
+    title = session.get("title") or "New chat"
 
     st.markdown(
         f"""
-        <div class="metric-grid">
-            <div class="metric-card"><span>Session</span><strong>{short_id(session["session_id"])}</strong></div>
-            <div class="metric-card"><span>PDFs indexed</span><strong>{len(documents)}</strong></div>
-            <div class="metric-card"><span>Messages</span><strong>{len(messages)}</strong></div>
+        <div class="top-card">
+            <h1>{title}</h1>
+            <p>Session {short(session["session_id"])} · updated {fmt_date(session.get("updated_at"))}</p>
+        </div>
+        <div class="info-row">
+            <div class="info-box"><span>PDFs</span><b>{len(docs)}</b></div>
+            <div class="info-box"><span>Messages</span><b>{len(messages)}</b></div>
+            <div class="info-box"><span>Backend</span><b>{BACKEND_API_URL.replace("http://", "")}</b></div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    if documents:
-        chips = "".join(
-            f'<span class="doc-chip">📄 {doc["filename"]} · {doc["chunks_indexed"]} chunks</span>'
-            for doc in documents
-        )
-        st.markdown(f'<div class="glass-card">{chips}</div>', unsafe_allow_html=True)
-    else:
+
+def render_docs(detail: dict[str, Any]) -> None:
+    docs = detail["documents"]
+    if not docs:
         st.markdown(
-            """
-            <div class="empty-state">
-                <h3>No PDFs in this session yet</h3>
-                <p>Upload one or more PDFs below. Once indexed, this session becomes queryable.</p>
-            </div>
-            """,
+            '<div class="empty">No PDFs indexed yet. Upload documents below.</div>',
             unsafe_allow_html=True,
         )
+        return
+
+    chips = "".join(
+        f'<span class="doc-chip">📄 {doc["filename"]} · {doc["chunks_indexed"]} chunks</span>'
+        for doc in docs
+    )
+    st.markdown(f'<div class="doc-list"><b>Indexed PDFs</b><br/>{chips}</div>', unsafe_allow_html=True)
 
 
-def render_upload_panel(session_id: str) -> None:
-    with st.container(border=False):
-        st.markdown("#### Add PDFs to this session")
-        uploaded_files = st.file_uploader(
-            "Drop PDFs here",
+def upload_area(session_id: str) -> None:
+    with st.expander("Upload PDFs", expanded=True):
+        files = st.file_uploader(
+            "Choose one or more PDFs",
             type=["pdf"],
             accept_multiple_files=True,
-            label_visibility="collapsed",
+            help="Large or scanned PDFs may take 1–3 minutes because Azure Document Intelligence extracts them first.",
         )
 
-        if uploaded_files and st.button("Index uploaded PDFs", use_container_width=True):
-            progress = st.progress(0, text="Preparing upload...")
-            successes = []
-            try:
-                for index, uploaded_file in enumerate(uploaded_files, start=1):
-                    progress.progress(
-                        (index - 1) / len(uploaded_files),
-                        text=f"Indexing {uploaded_file.name}...",
-                    )
-                    result = upload_pdf(session_id, uploaded_file)
-                    successes.append(result)
-
-                progress.progress(1.0, text="PDF indexing complete.")
-                st.success(
-                    "Indexed "
-                    + ", ".join(
-                        f"{item['filename']} ({item['chunks_indexed']} chunks)"
-                        for item in successes
-                    )
-                )
+        if files and st.button("Upload and index", type="primary", use_container_width=True):
+            progress = st.progress(0)
+            results: list[str] = []
+            for index, file in enumerate(files, start=1):
+                progress.progress((index - 1) / len(files), text=f"Indexing {file.name}...")
+                try:
+                    result = upload(session_id, file)
+                    results.append(f"{result['filename']} ({result['chunks_indexed']} chunks)")
+                except RuntimeError as exc:
+                    st.error(f"{file.name}: {exc}")
+            progress.progress(1.0, text="Done")
+            if results:
+                st.success("Indexed: " + ", ".join(results))
+                clear_cache()
                 load_session(session_id)
                 st.rerun()
-            except RuntimeError as exc:
-                st.error(f"Upload failed: {exc}")
 
 
 def render_messages(detail: dict[str, Any]) -> None:
     messages = detail["messages"]
     if not messages:
         st.markdown(
-            """
-            <div class="empty-state">
-                <h3>Ask your first question</h3>
-                <p>Try: “Summarize these PDFs”, “Compare the documents”, or “What are the key action items?”</p>
-            </div>
-            """,
+            '<div class="empty">Ask something like: “Summarize the uploaded PDFs” or “Compare the key points.”</div>',
             unsafe_allow_html=True,
         )
         return
 
-    for message in messages:
-        role = message["role"]
-        with st.chat_message("user" if role == "user" else "assistant"):
-            st.markdown(message["message"])
+    for msg in messages:
+        role = "user" if msg["role"] == "user" else "assistant"
+        with st.chat_message(role):
+            st.markdown(msg["message"])
 
 
-def render_chat_box(session_id: str) -> None:
-    question = st.chat_input("Ask across every PDF in this session...")
+def chat_box(session_id: str) -> None:
+    question = st.chat_input("Ask a question about the uploaded PDFs")
     if not question:
         return
 
@@ -502,74 +415,51 @@ def render_chat_box(session_id: str) -> None:
         st.markdown(question)
 
     with st.chat_message("assistant"):
-        placeholder = st.empty()
-        placeholder.markdown("Thinking through your PDFs...")
+        holder = st.empty()
+        holder.markdown("Searching your PDFs and drafting an answer...")
         try:
-            response = ask_question(session_id, question)
-            placeholder.markdown(response["answer"])
-            if response.get("sources"):
+            result = chat(session_id, question)
+            holder.markdown(result["answer"])
+            if result.get("sources"):
                 chips = "".join(
-                    f'<span class="source-chip">↳ {source}</span>'
-                    for source in response["sources"]
+                    f'<span class="source-chip">{source}</span>'
+                    for source in result["sources"]
                 )
                 st.markdown(chips, unsafe_allow_html=True)
-            st.caption(f"Retrieved chunks: {response.get('retrieved_chunks', 0)}")
+            st.caption(f"Retrieved chunks: {result.get('retrieved_chunks', 0)}")
+            clear_cache()
             load_session(session_id)
         except RuntimeError as exc:
-            placeholder.error(str(exc))
+            holder.error(str(exc))
 
 
-def render_active_session() -> None:
-    session_id = st.session_state.current_session_id
-
-    if session_id is None:
-        render_hero()
-        st.markdown("<br/>", unsafe_allow_html=True)
-        st.markdown(
-            """
-            <div class="empty-state">
-                <h3>Start with a new research chat</h3>
-                <p>Use the sidebar button to create a persistent session, then upload PDFs into it.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+def active_chat() -> None:
+    session_id = st.session_state.session_id
+    if not session_id:
+        landing()
         return
 
     try:
-        detail = get_session_detail(session_id)
-        st.session_state.session_detail = detail
+        detail = get_detail(session_id)
+        st.session_state.detail = detail
     except RuntimeError as exc:
         st.error(str(exc))
         return
 
-    session = detail["session"]
-    st.markdown(
-        f"""
-        <div class="hero">
-            <div class="eyebrow">Active session • {format_datetime(session.get("updated_at"))}</div>
-            <h1>{session.get("title", "New chat")}</h1>
-            <p>Session ID: {session_id}</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    render_session_overview(detail)
-
-    with st.expander("Upload more PDFs", expanded=not detail["documents"]):
-        render_upload_panel(session_id)
-
-    st.markdown("### Conversation")
+    render_header(detail)
+    render_docs(detail)
+    upload_area(session_id)
+    st.divider()
+    st.subheader("Chat")
     render_messages(detail)
-    render_chat_box(session_id)
+    chat_box(session_id)
 
 
 def main() -> None:
-    inject_styles()
-    ensure_state()
-    render_sidebar()
-    render_active_session()
+    styles()
+    init_state()
+    sidebar()
+    active_chat()
 
 
 if __name__ == "__main__":
