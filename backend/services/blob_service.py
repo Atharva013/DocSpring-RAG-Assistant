@@ -1,11 +1,12 @@
 """
-Handles all interaction with Azure Blob Storage: uploading the current
-session's PDF, clearing the previous one, and generating a short-lived
-SAS URL so Azure Document Intelligence can read the blob directly.
+Handles all interaction with Azure Blob Storage: uploading PDFs into
+session/document scoped paths and generating short-lived SAS URLs so
+Azure Document Intelligence can read blobs directly.
 """
 
 import logging
 from datetime import datetime, timedelta
+from pathlib import PurePosixPath
 
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.blob import BlobServiceClient, BlobSasPermissions, generate_blob_sas
@@ -15,6 +16,15 @@ from backend.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
+def build_blob_name(session_id: str, document_id: str, filename: str) -> str:
+    """
+    Builds a stable blob path for a PDF inside a chat session.
+    PurePosixPath keeps Azure blob names slash-separated on every OS.
+    """
+    safe_filename = PurePosixPath(filename).name
+    return str(PurePosixPath(session_id, document_id, safe_filename))
 
 
 def _get_blob_service_client() -> BlobServiceClient:
@@ -48,22 +58,23 @@ def clear_previous_session() -> None:
             continue
 
 
-def upload_pdf(file: UploadFile) -> str:
+def upload_pdf(file: UploadFile, *, blob_name: str | None = None) -> str:
     """
-    Uploads the given PDF to Blob Storage and returns its blob URL.
-    Assumes clear_previous_session() has already been called.
+    Uploads the given PDF to Blob Storage and returns its blob URL. When
+    blob_name is provided, it stores the file under that full path.
     """
     container_client = _get_container_client()
-    blob_client = container_client.get_blob_client(file.filename)
+    target_blob_name = blob_name or file.filename
+    blob_client = container_client.get_blob_client(target_blob_name)
 
     file.file.seek(0)
     blob_client.upload_blob(file.file, overwrite=True)
 
-    logger.info("Uploaded new blob: %s", file.filename)
+    logger.info("Uploaded blob: %s", target_blob_name)
     return blob_client.url
 
 
-def generate_read_sas_url(filename: str) -> str:
+def generate_read_sas_url(blob_name: str) -> str:
     """
     Generates a short-lived, read-only SAS URL for the given blob so
     Azure Document Intelligence can read it directly from Blob Storage.
@@ -73,12 +84,12 @@ def generate_read_sas_url(filename: str) -> str:
     container_client = blob_service_client.get_container_client(
         settings.azure_storage_container_name
     )
-    blob_client = container_client.get_blob_client(filename)
+    blob_client = container_client.get_blob_client(blob_name)
 
     sas_token = generate_blob_sas(
         account_name=blob_service_client.account_name,
         container_name=settings.azure_storage_container_name,
-        blob_name=filename,
+        blob_name=blob_name,
         account_key=blob_service_client.credential.account_key,
         permission=BlobSasPermissions(read=True),
         expiry=datetime.utcnow() + timedelta(minutes=15),

@@ -1,6 +1,7 @@
 """
-Manages the Azure AI Search index: creation, clearing, and population
-with chunk text and embeddings for vector retrieval.
+Manages the Azure AI Search index: creation, schema upgrades, and
+population with session-scoped chunk text and embeddings for vector
+retrieval.
 """
 
 import logging
@@ -59,19 +60,48 @@ def _get_search_client() -> SearchClient:
 
 def ensure_index_exists() -> None:
     """
-    Creates the Azure AI Search index if it doesn't already exist.
-    Safe to call on every upload — no-ops if the index is already present.
+    Creates the Azure AI Search index if it doesn't already exist. If an
+    older v1 index exists, adds the v2 filter fields needed for
+    multi-session retrieval without deleting existing documents.
     """
     index_client = _get_index_client()
     existing = [idx.name for idx in index_client.list_indexes()]
 
     if settings.azure_search_index_name in existing:
+        index = index_client.get_index(settings.azure_search_index_name)
+        field_names = {field.name for field in index.fields}
+
+        if "session_id" not in field_names:
+            index.fields.append(
+                SimpleField(
+                    name="session_id",
+                    type=SearchFieldDataType.String,
+                    filterable=True,
+                )
+            )
+        if "document_id" not in field_names:
+            index.fields.append(
+                SimpleField(
+                    name="document_id",
+                    type=SearchFieldDataType.String,
+                    filterable=True,
+                )
+            )
+
+        updated_field_names = {field.name for field in index.fields}
+        if {"session_id", "document_id"}.issubset(updated_field_names) and (
+            "session_id" not in field_names or "document_id" not in field_names
+        ):
+            index_client.create_or_update_index(index)
+            logger.info("Upgraded Azure AI Search index with v2 session fields")
         return
 
     fields = [
         SimpleField(name="id", type=SearchFieldDataType.String, key=True),
         SearchableField(name="content", type=SearchFieldDataType.String),
         SimpleField(name="chunk_index", type=SearchFieldDataType.Int32, filterable=True),
+        SimpleField(name="session_id", type=SearchFieldDataType.String, filterable=True),
+        SimpleField(name="document_id", type=SearchFieldDataType.String, filterable=True),
         SimpleField(name="source_file", type=SearchFieldDataType.String, filterable=True),
         SearchField(
             name="embedding",
@@ -116,7 +146,14 @@ def clear_index() -> None:
         logger.info("Cleared %d previous documents from index", len(ids_to_delete))
 
 
-def index_chunks(chunks, embeddings: list[list[float]], source_file: str) -> int:
+def index_chunks(
+    chunks,
+    embeddings: list[list[float]],
+    source_file: str,
+    *,
+    session_id: str | None = None,
+    document_id: str | None = None,
+) -> int:
     """
     Uploads chunk text and embeddings to the Azure AI Search index.
     The document key is derived from a sanitized version of the filename
@@ -125,13 +162,15 @@ def index_chunks(chunks, embeddings: list[list[float]], source_file: str) -> int
     Returns the number of chunks indexed.
     """
     search_client = _get_search_client()
-    safe_name = _sanitize_key(source_file)
+    safe_document_id = _sanitize_key(document_id or source_file)
 
     documents = [
         {
-            "id": f"{safe_name}-{chunk.chunk_index}",
+            "id": f"{safe_document_id}-{chunk.chunk_index}",
             "content": chunk.text,
             "chunk_index": chunk.chunk_index,
+            "session_id": session_id or "default",
+            "document_id": document_id or safe_document_id,
             "source_file": source_file,
             "embedding": embedding,
         }

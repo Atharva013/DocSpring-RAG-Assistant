@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
     title="DocSpring PDF Chat API",
-    description="RAG backend for chatting with a single uploaded PDF, powered by Azure AI services.",
+    description="RAG backend for persistent, session-scoped PDF chat powered by Azure AI services.",
     version="0.1.0",
 )
 
