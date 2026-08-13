@@ -24,6 +24,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     sources: list[str] = Field(default_factory=list)
+    retrieved_chunks: int = 0
 
 
 class HealthResponse(BaseModel):
