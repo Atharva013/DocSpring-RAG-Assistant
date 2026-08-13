@@ -53,14 +53,26 @@ async def upload_pdf(session_id: str, file: UploadFile = File(...)) -> UploadRes
         raise HTTPException(status_code=500, detail="Failed to upload file.") from exc
 
     try:
+        processing_stage = "text extraction"
         extracted_text = extraction_service.extract_text_from_blob_url(sas_url)
         if not extracted_text:
             raise ValueError("No text could be extracted from this PDF.")
 
+        processing_stage = "chunking"
         chunks = chunking_service.chunk_text(extracted_text)
-        embeddings = embedding_service.generate_embeddings([c.text for c in chunks])
+        if not chunks:
+            raise ValueError("Document text was extracted but no chunks were generated.")
 
+        processing_stage = "embedding generation"
+        embeddings = embedding_service.generate_embeddings([c.text for c in chunks])
+        if len(embeddings) != len(chunks):
+            raise ValueError(
+                f"Embedding count mismatch: {len(embeddings)} embeddings for {len(chunks)} chunks."
+            )
+
+        processing_stage = "search index setup"
         search_service.ensure_index_exists()
+        processing_stage = "search indexing"
         chunks_indexed = search_service.index_chunks(
             chunks,
             embeddings,
@@ -68,6 +80,7 @@ async def upload_pdf(session_id: str, file: UploadFile = File(...)) -> UploadRes
             session_id=session_id,
             document_id=document_id,
         )
+        processing_stage = "document metadata persistence"
         session_service.add_document_metadata(
             session_id,
             document_id=document_id,
@@ -76,8 +89,11 @@ async def upload_pdf(session_id: str, file: UploadFile = File(...)) -> UploadRes
             chunks_indexed=chunks_indexed,
         )
     except Exception as exc:
-        logger.exception("Processing/indexing step failed")
-        raise HTTPException(status_code=500, detail="Failed to process document.") from exc
+        logger.exception("Processing/indexing step failed during %s", processing_stage)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed during {processing_stage}: {exc}",
+        ) from exc
 
     return UploadResponse(
         session_id=session_id,

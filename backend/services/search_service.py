@@ -26,6 +26,7 @@ from backend.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+UPLOAD_BATCH_SIZE = 100
 
 EMBEDDING_DIMENSIONS = 1536  # matches text-embedding-3-small output size
 VECTOR_PROFILE_NAME = "default-vector-profile"
@@ -181,7 +182,8 @@ def index_chunks(
     if not documents:
         return 0
 
-    search_client.upload_documents(documents=documents)
+    for start in range(0, len(documents), UPLOAD_BATCH_SIZE):
+        search_client.upload_documents(documents=documents[start : start + UPLOAD_BATCH_SIZE])
     logger.info("Indexed %d chunks for %s", len(documents), source_file)
     return len(documents)
 

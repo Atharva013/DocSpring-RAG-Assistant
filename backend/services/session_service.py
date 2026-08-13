@@ -8,6 +8,7 @@ for Students subscription.
 """
 
 import logging
+from functools import lru_cache
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -29,6 +30,7 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+@lru_cache
 def _get_table_service_client() -> TableServiceClient:
     return TableServiceClient.from_connection_string(
         conn_str=settings.azure_storage_connection_string
@@ -36,20 +38,19 @@ def _get_table_service_client() -> TableServiceClient:
 
 
 def _get_table_client(table_name: str) -> TableClient:
-    service_client = _get_table_service_client()
-    try:
-        service_client.create_table(table_name)
-        logger.info("Created Azure Table Storage table: %s", table_name)
-    except ResourceExistsError:
-        pass
-
-    return service_client.get_table_client(table_name=table_name)
+    return _get_table_service_client().get_table_client(table_name=table_name)
 
 
+@lru_cache
 def ensure_tables_exist() -> None:
     """Creates the v2 persistence tables if they are missing."""
+    service_client = _get_table_service_client()
     for table_name in (SESSIONS_TABLE, DOCUMENTS_TABLE, CHAT_HISTORY_TABLE):
-        _get_table_client(table_name)
+        try:
+            service_client.create_table(table_name)
+            logger.info("Created Azure Table Storage table: %s", table_name)
+        except ResourceExistsError:
+            pass
 
 
 def _to_session_summary(entity: dict) -> dict:
