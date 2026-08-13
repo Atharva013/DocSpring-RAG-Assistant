@@ -32,6 +32,16 @@ class HealthResponse(BaseModel):
     service: str = "docspring-pdf-chat-backend"
 
 
+class ReadinessResponse(BaseModel):
+    status: str
+    openai_endpoint: str
+    chat_deployment: str
+    embedding_deployment: str
+    embedding_dimensions: int
+    search_index: str
+    search_fields: list[str] = Field(default_factory=list)
+
+
 class SessionCreateResponse(BaseModel):
     session_id: str
     title: str

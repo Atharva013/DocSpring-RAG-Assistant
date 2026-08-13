@@ -62,8 +62,9 @@ def generate_answer(question: str, chunks: list[dict]) -> str:
                     "You are DocSpring, a helpful RAG assistant for PDFs. "
                     "Answer only from the provided PDF context. If the context "
                     "does not contain the answer, say that you could not find it. "
-                    "Keep answers clear, practical, and cite source filenames "
-                    "when useful."
+                    "Format every substantial answer with short markdown sections: "
+                    "Summary, Key points, and Sources. Use bullets when helpful. "
+                    "Keep answers clear, practical, and cite source filenames."
                 ),
             },
             {
@@ -76,3 +77,4 @@ def generate_answer(question: str, chunks: list[dict]) -> str:
     answer = response.choices[0].message.content or ""
     logger.info("Generated chat answer with %d retrieved chunks", len(chunks))
     return answer.strip()
+
