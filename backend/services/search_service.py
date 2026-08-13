@@ -9,6 +9,7 @@ import re
 
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
+from azure.search.documents.models import VectorizedQuery
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
     HnswAlgorithmConfiguration,
@@ -183,3 +184,45 @@ def index_chunks(
     search_client.upload_documents(documents=documents)
     logger.info("Indexed %d chunks for %s", len(documents), source_file)
     return len(documents)
+
+
+def search_session_chunks(
+    query_embedding: list[float],
+    *,
+    session_id: str,
+    top_k: int = 5,
+) -> list[dict]:
+    """
+    Runs vector retrieval against only the chunks that belong to one chat
+    session. This is the core guardrail that prevents one session from
+    seeing another session's PDFs.
+    """
+    search_client = _get_search_client()
+    vector_query = VectorizedQuery(
+        vector=query_embedding,
+        k_nearest_neighbors=top_k,
+        fields="embedding",
+    )
+
+    results = search_client.search(
+        search_text=None,
+        vector_queries=[vector_query],
+        filter=f"session_id eq '{session_id}'",
+        select=["content", "source_file", "chunk_index", "document_id"],
+        top=top_k,
+    )
+
+    chunks = []
+    for result in results:
+        chunks.append(
+            {
+                "content": result["content"],
+                "source_file": result["source_file"],
+                "chunk_index": result["chunk_index"],
+                "document_id": result["document_id"],
+                "score": result.get("@search.score"),
+            }
+        )
+
+    logger.info("Retrieved %d chunks for session %s", len(chunks), session_id)
+    return chunks
