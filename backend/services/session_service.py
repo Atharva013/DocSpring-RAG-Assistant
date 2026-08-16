@@ -204,11 +204,15 @@ def add_document_metadata(
     }
     _get_table_client(DOCUMENTS_TABLE).create_entity(entity=document_entity)
 
-    new_title = filename if session["title"] == "New chat" else session["title"]
+    # Update session: increment document count and bump updated_at.
+    # NOTE: We deliberately do NOT rename the session here. The title will be
+    # set automatically by the LLM after the user sends their first question
+    # (see chat router). This prevents duplicate-name confusion when the same
+    # PDF is uploaded into multiple sessions.
     session_entity = {
         "PartitionKey": SESSION_PARTITION_KEY,
         "RowKey": session_id,
-        "title": new_title,
+        "title": session["title"],
         "created_at": session["created_at"],
         "updated_at": now,
         "document_count": session["document_count"] + 1,
@@ -242,3 +246,60 @@ def append_chat_message(session_id: str, *, role: str, message: str) -> dict:
     touch_session(session_id)
 
     return _to_chat_message(entity)
+
+
+def delete_session_records(session_id: str) -> dict:
+    """
+    Deletes session metadata, document metadata, and chat messages from
+    Azure Table Storage. Blob/Search cleanup is handled by their services.
+    """
+    session = get_session(session_id)
+    if session is None:
+        raise ValueError(f"Session not found: {session_id}")
+
+    documents_client = _get_table_client(DOCUMENTS_TABLE)
+    messages_client = _get_table_client(CHAT_HISTORY_TABLE)
+    sessions_client = _get_table_client(SESSIONS_TABLE)
+
+    document_entities = list(
+        documents_client.query_entities(
+            query_filter="PartitionKey eq @session_id",
+            parameters={"session_id": session_id},
+            select=["PartitionKey", "RowKey"],
+        )
+    )
+    message_entities = list(
+        messages_client.query_entities(
+            query_filter="PartitionKey eq @session_id",
+            parameters={"session_id": session_id},
+            select=["PartitionKey", "RowKey"],
+        )
+    )
+
+    for entity in document_entities:
+        documents_client.delete_entity(
+            partition_key=entity["PartitionKey"],
+            row_key=entity["RowKey"],
+        )
+
+    for entity in message_entities:
+        messages_client.delete_entity(
+            partition_key=entity["PartitionKey"],
+            row_key=entity["RowKey"],
+        )
+
+    sessions_client.delete_entity(
+        partition_key=SESSION_PARTITION_KEY,
+        row_key=session_id,
+    )
+
+    logger.info(
+        "Deleted session records for %s: %d documents, %d messages",
+        session_id,
+        len(document_entities),
+        len(message_entities),
+    )
+    return {
+        "deleted_documents": len(document_entities),
+        "deleted_messages": len(message_entities),
+    }
