@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import PurePosixPath
 
-from azure.core.exceptions import ResourceNotFoundError
+from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from azure.storage.blob import BlobServiceClient, BlobSasPermissions, generate_blob_sas
 from fastapi import UploadFile
 
@@ -95,3 +95,38 @@ def generate_read_sas_url(blob_name: str) -> str:
         expiry=datetime.utcnow() + timedelta(minutes=15),
     )
     return f"{blob_client.url}?{sas_token}"
+
+
+def delete_session_blobs(session_id: str) -> int:
+    """Deletes all PDFs stored under a session prefix."""
+    container_client = _get_container_client()
+    deleted = 0
+    prefix = f"{session_id}/"
+
+    blob_names = [blob.name for blob in container_client.list_blobs(name_starts_with=prefix)]
+    # Storage accounts with hierarchical namespace can expose directory
+    # markers. Delete deepest paths first so directories are empty before
+    # their markers are removed.
+    blob_names.sort(key=lambda name: (name.count("/"), len(name)), reverse=True)
+
+    skipped_directories: list[str] = []
+    for blob_name in blob_names:
+        try:
+            container_client.delete_blob(blob_name)
+            deleted += 1
+            logger.info("Deleted session blob: %s", blob_name)
+        except ResourceNotFoundError:
+            continue
+        except ResourceExistsError:
+            skipped_directories.append(blob_name)
+
+    # One retry pass for directory markers that may have become empty.
+    for blob_name in skipped_directories:
+        try:
+            container_client.delete_blob(blob_name)
+            deleted += 1
+            logger.info("Deleted session directory marker: %s", blob_name)
+        except (ResourceExistsError, ResourceNotFoundError):
+            logger.info("Skipped non-empty or missing directory marker: %s", blob_name)
+
+    return deleted
