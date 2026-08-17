@@ -73,8 +73,9 @@ def ensure_index_exists() -> None:
         index = index_client.get_index(settings.azure_search_index_name)
         field_names = {field.name for field in index.fields}
 
+        new_fields = []
         if "session_id" not in field_names:
-            index.fields.append(
+            new_fields.append(
                 SimpleField(
                     name="session_id",
                     type=SearchFieldDataType.String,
@@ -82,26 +83,36 @@ def ensure_index_exists() -> None:
                 )
             )
         if "document_id" not in field_names:
-            index.fields.append(
+            new_fields.append(
                 SimpleField(
                     name="document_id",
                     type=SearchFieldDataType.String,
                     filterable=True,
                 )
             )
+        if "page_number" not in field_names:
+            new_fields.append(
+                SimpleField(
+                    name="page_number",
+                    type=SearchFieldDataType.Int32,
+                    filterable=True,
+                )
+            )
 
-        updated_field_names = {field.name for field in index.fields}
-        if {"session_id", "document_id"}.issubset(updated_field_names) and (
-            "session_id" not in field_names or "document_id" not in field_names
-        ):
+        if new_fields:
+            index.fields.extend(new_fields)
             index_client.create_or_update_index(index)
-            logger.info("Upgraded Azure AI Search index with v2 session fields")
+            logger.info(
+                "Upgraded Azure AI Search index with fields: %s",
+                [f.name for f in new_fields],
+            )
         return
 
     fields = [
         SimpleField(name="id", type=SearchFieldDataType.String, key=True),
         SearchableField(name="content", type=SearchFieldDataType.String),
         SimpleField(name="chunk_index", type=SearchFieldDataType.Int32, filterable=True),
+        SimpleField(name="page_number", type=SearchFieldDataType.Int32, filterable=True),
         SimpleField(name="session_id", type=SearchFieldDataType.String, filterable=True),
         SimpleField(name="document_id", type=SearchFieldDataType.String, filterable=True),
         SimpleField(name="source_file", type=SearchFieldDataType.String, filterable=True),
@@ -171,6 +182,7 @@ def index_chunks(
             "id": f"{safe_document_id}-{chunk.chunk_index}",
             "content": chunk.text,
             "chunk_index": chunk.chunk_index,
+            "page_number": getattr(chunk, "page_number", 1),
             "session_id": session_id or "default",
             "document_id": document_id or safe_document_id,
             "source_file": source_file,
@@ -192,7 +204,7 @@ def search_session_chunks(
     query_embedding: list[float],
     *,
     session_id: str,
-    top_k: int = 5,
+    top_k: int = 8,
 ) -> list[dict]:
     """
     Runs vector retrieval against only the chunks that belong to one chat
@@ -210,7 +222,7 @@ def search_session_chunks(
         search_text=None,
         vector_queries=[vector_query],
         filter=f"session_id eq '{session_id}'",
-        select=["content", "source_file", "chunk_index", "document_id"],
+        select=["content", "source_file", "chunk_index", "document_id", "page_number"],
         top=top_k,
     )
 
@@ -221,6 +233,7 @@ def search_session_chunks(
                 "content": result["content"],
                 "source_file": result["source_file"],
                 "chunk_index": result["chunk_index"],
+                "page_number": result.get("page_number") or 0,
                 "document_id": result["document_id"],
                 "score": result.get("@search.score"),
             }
@@ -228,3 +241,24 @@ def search_session_chunks(
 
     logger.info("Retrieved %d chunks for session %s", len(chunks), session_id)
     return chunks
+
+
+def delete_session_chunks(session_id: str) -> int:
+    """Deletes all indexed chunks that belong to one session."""
+    search_client = _get_search_client()
+    results = search_client.search(
+        search_text="*",
+        filter=f"session_id eq '{session_id}'",
+        select=["id"],
+        top=1000,
+    )
+    ids_to_delete = [{"id": doc["id"]} for doc in results]
+
+    if not ids_to_delete:
+        return 0
+
+    for start in range(0, len(ids_to_delete), UPLOAD_BATCH_SIZE):
+        search_client.delete_documents(documents=ids_to_delete[start : start + UPLOAD_BATCH_SIZE])
+
+    logger.info("Deleted %d search chunks for session %s", len(ids_to_delete), session_id)
+    return len(ids_to_delete)
