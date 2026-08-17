@@ -32,7 +32,7 @@ Thumbs.db
 logs/
 
 # Streamlit
-.streamlit/secrets.toml
+.streamlit/
 
 # Distribution / build
 build/
