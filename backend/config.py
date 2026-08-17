@@ -30,6 +30,13 @@ class Settings(BaseSettings):
 
     # App
     max_upload_size_mb: int = 20
+    max_pdf_pages: int = 40
+    max_extracted_chars: int = 90000
+    max_chunks_per_document: int = 80
+    chunk_size: int = 1600
+    chunk_overlap: int = 200
+    embedding_batch_size: int = 8
+    azure_openai_timeout_seconds: int = 30
 
     model_config = SettingsConfigDict(
         env_file=".env",
