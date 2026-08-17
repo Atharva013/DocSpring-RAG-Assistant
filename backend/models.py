@@ -25,11 +25,23 @@ class ChatResponse(BaseModel):
     answer: str
     sources: list[str] = Field(default_factory=list)
     retrieved_chunks: int = 0
+    # Detailed per-chunk provenance: [{source_file, page_number, chunk_index}]
+    sources_detail: list[dict] = Field(default_factory=list)
 
 
 class HealthResponse(BaseModel):
     status: str
     service: str = "docspring-pdf-chat-backend"
+
+
+class ReadinessResponse(BaseModel):
+    status: str
+    openai_endpoint: str
+    chat_deployment: str
+    embedding_deployment: str
+    embedding_dimensions: int
+    search_index: str
+    search_fields: list[str] = Field(default_factory=list)
 
 
 class SessionCreateResponse(BaseModel):
@@ -67,3 +79,21 @@ class SessionDetail(BaseModel):
     session: SessionSummary
     documents: list[SessionDocument] = Field(default_factory=list)
     messages: list[ChatMessage] = Field(default_factory=list)
+
+
+class DeleteSessionResponse(BaseModel):
+    session_id: str
+    deleted_documents: int = 0
+    deleted_messages: int = 0
+    deleted_blobs: int = 0
+    deleted_search_chunks: int = 0
+    status: str = "deleted"
+
+
+class TitleUpdateRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=100)
+
+
+class TitleUpdateResponse(BaseModel):
+    session_id: str
+    title: str
