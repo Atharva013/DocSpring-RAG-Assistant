@@ -10,7 +10,6 @@ from backend.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
-BATCH_SIZE = 16
 
 
 def _get_client() -> AzureOpenAI:
@@ -18,6 +17,8 @@ def _get_client() -> AzureOpenAI:
         azure_endpoint=settings.azure_openai_endpoint,
         api_key=settings.azure_openai_key,
         api_version=settings.azure_openai_api_version,
+        timeout=settings.azure_openai_timeout_seconds,
+        max_retries=0,
     )
 
 
@@ -32,8 +33,9 @@ def generate_embeddings(texts: list[str]) -> list[list[float]]:
     client = _get_client()
     embeddings: list[list[float]] = []
 
-    for start in range(0, len(texts), BATCH_SIZE):
-        batch = texts[start : start + BATCH_SIZE]
+    batch_size = max(1, settings.embedding_batch_size)
+    for start in range(0, len(texts), batch_size):
+        batch = texts[start : start + batch_size]
         response = client.embeddings.create(
             model=settings.azure_openai_embedding_deployment,
             input=batch,
