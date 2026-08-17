@@ -17,6 +17,16 @@ async def health_check() -> HealthResponse:
     return HealthResponse(status="ok")
 
 
+@router.get("/info")
+async def model_info() -> dict:
+    """Lightweight — returns deployment names with no external service calls."""
+    return {
+        "chat_model": settings.azure_openai_chat_deployment or "—",
+        "embedding_model": settings.azure_openai_embedding_deployment or "—",
+        "search_index": settings.azure_search_index_name or "—",
+    }
+
+
 @router.get("/ready", response_model=ReadinessResponse)
 async def readiness_check() -> ReadinessResponse:
     embeddings = embedding_service.generate_embeddings(["DocSpring readiness check"])

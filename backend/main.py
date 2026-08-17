@@ -11,6 +11,8 @@ from backend.routers import chat, health, sessions, upload
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("azure").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("openai").setLevel(logging.WARNING)
 
 app = FastAPI(
     title="DocSpring PDF Chat API",
