@@ -1,4 +1,4 @@
-# DocSpring — Azure-Powered Multi-PDF RAG Assistant
+#      DocSpring — Azure-Powered Multi-PDF RAG Assistant
 
 <p align="center">
   <strong>An Azure-Powered RAG Assistant for Multi-PDF Question Answering with Page Citations</strong>
