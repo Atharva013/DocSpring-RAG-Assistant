@@ -43,6 +43,35 @@ def _build_context(chunks: list[dict]) -> str:
     return "\n\n---\n\n".join(context_blocks)
 
 
+import re
+
+def format_answer_markdown(answer: str) -> str:
+    """
+    Normalizes AI generated answers so section headers ('Summary', 'Key points', 'Sources')
+    are consistently formatted as bold markdown headings on their own lines.
+    """
+    if not answer:
+        return ""
+
+    text = answer.strip()
+
+    # Standardize 'Summary:', 'Summary\n', '### Summary', '# Summary' -> '**Summary**\n'
+    text = re.sub(r'^(?:#+\s*)?Summary\s*:\s*', '**Summary**\n', text, flags=re.IGNORECASE | re.MULTILINE)
+    text = re.sub(r'^(?:#+\s*)Summary\b', '**Summary**', text, flags=re.IGNORECASE | re.MULTILINE)
+
+    # Standardize 'Key points:', 'Key Points:', '### Key points' -> '\n\n**Key points**\n'
+    text = re.sub(r'^(?:#+\s*)?Key\s+[pP]oints\s*:\s*', '\n\n**Key points**\n', text, flags=re.IGNORECASE | re.MULTILINE)
+    text = re.sub(r'^(?:#+\s*)Key\s+[pP]oints\b', '\n\n**Key points**', text, flags=re.IGNORECASE | re.MULTILINE)
+
+    # Standardize 'Sources:', 'Cited Sources:', '### Sources' -> '\n\n**Sources**\n'
+    text = re.sub(r'^(?:#+\s*)?(?:Cited\s+)?Sources\s*:\s*', '\n\n**Sources**\n', text, flags=re.IGNORECASE | re.MULTILINE)
+    text = re.sub(r'^(?:#+\s*)(?:Cited\s+)?Sources\b', '\n\n**Sources**', text, flags=re.IGNORECASE | re.MULTILINE)
+
+    # Clean up excessive newlines
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
+
+
 def generate_answer(question: str, chunks: list[dict]) -> str:
     """
     Produces a grounded answer from retrieved chunks. If the answer is not
@@ -68,10 +97,12 @@ def generate_answer(question: str, chunks: list[dict]) -> str:
                     "You are DocSpring, a helpful RAG assistant for PDFs. "
                     "Answer only from the provided PDF context. If the context "
                     "does not contain the answer, say that you could not find it. "
-                    "Format every substantial answer with short markdown sections: "
-                    "Summary, Key points, and Sources. Use bullets when helpful. "
-                    "Keep answers clear, practical, and cite source filenames "
-                    "and page numbers where relevant."
+                    "Format every answer using bold markdown section headings on their own line:\n\n"
+                    "**Summary**\n<1-2 sentence overview>\n\n"
+                    "**Key points**\n<bullet points>\n\n"
+                    "**Sources**\n<bullet list of source documents and page numbers>\n\n"
+                    "Always use bold syntax (**Summary**, **Key points**, **Sources**) for section headers. "
+                    "Keep answers clear, practical, and cite source filenames and page numbers where relevant."
                 ),
             },
             {
@@ -81,9 +112,11 @@ def generate_answer(question: str, chunks: list[dict]) -> str:
         ],
     )
 
-    answer = response.choices[0].message.content or ""
+    raw_answer = response.choices[0].message.content or ""
+    formatted_answer = format_answer_markdown(raw_answer)
     logger.info("Generated chat answer with %d retrieved chunks", len(chunks))
-    return answer.strip()
+    return formatted_answer
+
 
 
 def generate_session_title(question: str) -> str:
