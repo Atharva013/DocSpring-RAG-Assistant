@@ -22,19 +22,19 @@ graph TD
 
     subgraph Backend Orchestration Layer
         FastAPI[FastAPI Router Engine]:::backend
-        UploadEndpoint[/sessions/{id}/upload]:::backend
-        ChatEndpoint[/sessions/{id}/chat]:::backend
+        UploadEndpoint["/sessions/{id}/upload"]:::backend
+        ChatEndpoint["/sessions/{id}/chat"]:::backend
         SessionService[Session Lifecycle Service]:::backend
     end
 
     subgraph Azure Cloud Platform
-        BlobStore[(Azure Blob Storage\nContainer: pdf-uploads)]:::store
-        DocIntel[Azure Document Intelligence\nS0 Standard Tier - prebuilt-read]:::azure
-        AISearch[(Azure AI Search Index\nName: pdf-chat-index)]:::store
+        BlobStore[(Azure Blob Storage<br/>Container: pdf-uploads)]:::store
+        DocIntel[Azure Document Intelligence<br/>S0 Standard Tier - prebuilt-read]:::azure
+        AISearch[(Azure AI Search Index<br/>Name: pdf-chat-index)]:::store
 
         subgraph Azure AI Foundry Hub
-            FoundryEmbed[Deployment: text-embedding-3-small\n1536-dimensional vectors]:::azure
-            FoundryChat[Deployment: gpt-4.1-mini\nGrounded Chat Completion]:::azure
+            FoundryEmbed[Deployment: text-embedding-3-small<br/>1536-dimensional vectors]:::azure
+            FoundryChat[Deployment: gpt-4.1-mini<br/>Grounded Chat Completion]:::azure
         end
     end
 
