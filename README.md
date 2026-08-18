@@ -240,7 +240,7 @@ For complete step-by-step Azure resource provisioning, see **[docs/setup_guide.m
 
 ---
 
-## ⚡ API Endpoints Summary
+## ✨ API Endpoints Summary
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
