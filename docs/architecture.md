@@ -15,46 +15,45 @@ graph TD
     classDef azure fill:#0078d4,stroke:#005a9e,stroke-width:2px,color:#fff;
     classDef store fill:#6366f1,stroke:#4338ca,stroke-width:2px,color:#fff;
 
-    subgraph Client Layer
-        ReactUI[React 19 + MUI Frontend]:::frontend
-        StreamlitUI[Streamlit Dashboard]:::frontend
+    subgraph Clients["1. Frontend Presentation Layer"]
+        ReactUI["React 19 + MUI Frontend"]:::frontend
+        StreamlitUI["Streamlit Dashboard"]:::frontend
     end
 
-    subgraph Backend Orchestration Layer
-        FastAPI[FastAPI Router Engine]:::backend
-        UploadEndpoint["/sessions/{id}/upload"]:::backend
-        ChatEndpoint["/sessions/{id}/chat"]:::backend
-        SessionService[Session Lifecycle Service]:::backend
+    subgraph Backend["2. FastAPI Orchestration Layer"]
+        UploadAPI["PDF Upload Endpoint<br/>/sessions/{id}/upload"]:::backend
+        ChatAPI["Chat Question Endpoint<br/>/sessions/{id}/chat"]:::backend
+        SessionAPI["Session Management Router<br/>/sessions"]:::backend
     end
 
-    subgraph Azure Cloud Platform
-        BlobStore[(Azure Blob Storage<br/>Container: pdf-uploads)]:::store
-        DocIntel[Azure Document Intelligence<br/>S0 Standard Tier - prebuilt-read]:::azure
-        AISearch[(Azure AI Search Index<br/>Name: pdf-chat-index)]:::store
-
-        subgraph Azure AI Foundry Hub
-            FoundryEmbed[Deployment: text-embedding-3-small<br/>1536-dimensional vectors]:::azure
-            FoundryChat[Deployment: gpt-4.1-mini<br/>Grounded Chat Completion]:::azure
-        end
+    subgraph Ingestion["3. Azure Ingestion & OCR Services"]
+        AzureBlob[("Azure Blob Storage<br/>Container: pdf-uploads")]:::store
+        AzureDocIntel["Azure Document Intelligence<br/>S0 Standard Tier - prebuilt-read"]:::azure
     end
 
-    ReactUI -->|REST / JSON| FastAPI
-    StreamlitUI -->|REST / JSON| FastAPI
+    subgraph AIPlatform["4. Azure AI Foundry & Vector Search Services"]
+        AzureFoundryEmbed["Azure AI Foundry Embeddings<br/>Deployment: text-embedding-3-small"]:::azure
+        AzureAISearch[("Azure AI Search Index<br/>HNSW Vector Index: pdf-chat-index")]:::store
+        AzureFoundryChat["Azure AI Foundry Chat<br/>Deployment: gpt-4.1-mini"]:::azure
+    end
 
-    FastAPI --> UploadEndpoint
-    FastAPI --> ChatEndpoint
-    FastAPI --> SessionService
+    ReactUI -->|REST / JSON| UploadAPI
+    ReactUI -->|REST / JSON| ChatAPI
+    ReactUI -->|REST / JSON| SessionAPI
+    StreamlitUI -->|REST / JSON| UploadAPI
+    StreamlitUI -->|REST / JSON| ChatAPI
 
-    UploadEndpoint -->|1. Store PDFs| BlobStore
-    UploadEndpoint -->|2. SAS Read URL| DocIntel
-    UploadEndpoint -->|3. Generate Chunks| FoundryEmbed
-    FoundryEmbed -->|4. Push Embeddings & Metadata| AISearch
+    UploadAPI -->|1. Store Raw PDFs| AzureBlob
+    UploadAPI -->|2. Read SAS URL| AzureDocIntel
+    AzureDocIntel -->|3. Extracted Text & Spans| UploadAPI
+    UploadAPI -->|4. Text Chunks| AzureFoundryEmbed
+    AzureFoundryEmbed -->|5. 1536-dim Vectors & Metadata| AzureAISearch
 
-    ChatEndpoint -->|5. Query Embedding| FoundryEmbed
-    ChatEndpoint -->|6. KNN Vector Search + Session Filter| AISearch
-    AISearch -->|7. Retrieved Context Chunks| ChatEndpoint
-    ChatEndpoint -->|8. Grounded Prompt Completion| FoundryChat
-    FoundryChat -->|9. Structured Answer| ReactUI
+    ChatAPI -->|1. Question Text| AzureFoundryEmbed
+    AzureFoundryEmbed -->|2. Query Embedding Vector| AzureAISearch
+    AzureAISearch -->|3. HNSW Vector Search & Session Filter| ChatAPI
+    ChatAPI -->|4. Grounded Context Payload| AzureFoundryChat
+    AzureFoundryChat -->|5. Structured Answer| ReactUI
 ```
 
 ---
@@ -109,7 +108,7 @@ sequenceDiagram
     UI->>API: POST /sessions/{sessionId}/chat { question }
     API->>Embed: Generate query vector embedding (1536 dims)
     Embed-->>API: Query vector array
-    API->>VectorDB: KNN Query (k=8, filter: session_id eq '{sessionId}')
+    API->>VectorDB: HNSW Vector Search (k=8, filter: session_id eq '{sessionId}')
     VectorDB-->>API: Top matching chunks across multi-PDFs + Page numbers
     API->>API: Build system prompt template with retrieved context
     API->>ChatLLM: Send grounded completion request
