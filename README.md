@@ -1,7 +1,9 @@
-#      DocSpring — Azure-Powered Multi-PDF RAG Assistant
+<div align="center">
+
+# DocSpring — Azure-Powered Multi-PDF RAG Assistant
 
 <p align="center">
-  <strong>An Azure-Powered RAG Assistant for Multi-PDF Question Answering with Page Citations</strong>
+  <strong>An Azure-powered RAG assistant for indexing multiple PDFs and answering questions with exact page-level citations.</strong>
 </p>
 
 <p align="center">
@@ -13,6 +15,8 @@
   <img src="https://img.shields.io/badge/React_19-Material_UI_v9-61DAFB.svg?style=flat&logo=react" alt="React MUI">
   <img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat" alt="License">
 </p>
+
+</div>
 
 ---
 
