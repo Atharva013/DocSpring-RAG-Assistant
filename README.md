@@ -1,7 +1,7 @@
 # DocSpring — Azure-Powered Multi-PDF RAG Assistant
 
 <p align="center">
-  <strong>An Azure-Powered RAG Assistant for Indexing Multiple PDFs and Answering Questions with Exact Page-Level Citations</strong>
+  <strong>An Azure-Powered RAG Assistant for Multi-PDF Question Answering with Page Citations</strong>
 </p>
 
 <p align="center">
@@ -21,15 +21,6 @@
 **DocSpring** is an enterprise-grade, Azure-native Retrieval-Augmented Generation (RAG) platform that enables users to upload **multiple PDF documents per chat session** and conduct grounded, natural language Q&A against their combined contents.
 
 Built end-to-end on **Azure AI Cloud Services** (Azure Blob Storage, Azure Document Intelligence Standard `S0` Tier, Azure AI Foundry, and Azure AI Search), DocSpring extracts text across multi-page documents with page-level accuracy, indexes 1536-dimensional embeddings into an HNSW vector index, and generates answers strictly grounded in your documents with exact **source filename and page number citations**.
-
----
-
-## 📸 Screenshots
-
-Click the links below to view high-resolution screenshots of the DocSpring interface:
-
-- 🖼️ [DocSpring Multi-PDF Dashboard & Session Navigation](docs/assets/screenshots/docspring_multi_pdf_dashboard.png) — Features the dark sidebar session list, active session stats, multi-PDF document summary panel, drag-and-drop file uploader, and interactive chat stream.
-- 🖼️ [Grounded AI Response & Citation Drawer](docs/assets/screenshots/docspring_single_pdf_chat.png) — Demonstrates AI response normalized into bold markdown headings (**Summary**, **Key points**) along with page-level source citations (`Page 1 Chunk 1`, `Page 2 Chunk 2`).
 
 ---
 
@@ -142,6 +133,15 @@ DocSpring-RAG-Assistant/
 ├── requirements.txt          # Python backend dependencies
 └── .env.example              # Environment variables template
 ```
+
+---
+
+## 📸 Screenshots
+
+Click the links below to view high-resolution screenshots of the DocSpring interface:
+
+- 🖼️ [DocSpring Multi-PDF Dashboard & Session Navigation](docs/assets/screenshots/docspring_multi_pdf_dashboard.png) — Features the dark sidebar session list, active session stats, multi-PDF document summary panel, drag-and-drop file uploader, and interactive chat stream.
+- 🖼️ [Grounded AI Response & Citation Drawer](docs/assets/screenshots/docspring_single_pdf_chat.png) — Demonstrates AI response normalized into bold markdown headings (**Summary**, **Key points**) along with page-level source citations (`Page 1 Chunk 1`, `Page 2 Chunk 2`).
 
 ---
 
