@@ -10,55 +10,51 @@ DocSpring RAG Assistant is built on a high-performance, cloud-native RAG archite
 
 ```mermaid
 graph TD
-    User([User Browser]) -->|HTTP / JSON| FrontendReact[React 19 + MUI Frontend]
-    User -->|HTTP / HTML| FrontendStreamlit[Streamlit Dashboard]
-    
-    subgraph FastAPI Backend App
-        API[FastAPI Router Engine]
-        SessionRouter[Routers: /sessions]
-        UploadRouter[Routers: /upload]
-        ChatRouter[Routers: /chat]
-        
-        BlobSvc[Blob Service]
-        DocIntelSvc[Extraction Service]
-        ChunkingSvc[Chunking Service]
-        EmbeddingSvc[Embedding Service]
-        SearchSvc[Search Service]
-        ChatSvc[Chat Service]
+    classDef frontend fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff;
+    classDef backend fill:#0284c7,stroke:#0369a1,stroke-width:2px,color:#fff;
+    classDef azure fill:#0078d4,stroke:#005a9e,stroke-width:2px,color:#fff;
+    classDef store fill:#6366f1,stroke:#4338ca,stroke-width:2px,color:#fff;
+
+    subgraph Client Layer
+        ReactUI[React 19 + MUI Frontend]:::frontend
+        StreamlitUI[Streamlit Dashboard]:::frontend
     end
-    
+
+    subgraph Backend Orchestration Layer
+        FastAPI[FastAPI Router Engine]:::backend
+        UploadEndpoint[/sessions/{id}/upload]:::backend
+        ChatEndpoint[/sessions/{id}/chat]:::backend
+        SessionService[Session Lifecycle Service]:::backend
+    end
+
     subgraph Azure Cloud Platform
-        AzureBlob[(Azure Blob Storage\nContainer: pdf-uploads)]
-        AzureDocIntel[Azure Document Intelligence\nS0 Standard Tier - prebuilt-read]
-        AzureAISearch[(Azure AI Search\nIndex: pdf-chat-index)]
-        
+        BlobStore[(Azure Blob Storage\nContainer: pdf-uploads)]:::store
+        DocIntel[Azure Document Intelligence\nS0 Standard Tier - prebuilt-read]:::azure
+        AISearch[(Azure AI Search Index\nName: pdf-chat-index)]:::store
+
         subgraph Azure AI Foundry Hub
-            AzureFoundryEmbed[Deployment: text-embedding-3-small\n1536-dimensional vectors]
-            AzureFoundryChat[Deployment: gpt-4.1-mini\nGrounded Chat Completion]
+            FoundryEmbed[Deployment: text-embedding-3-small\n1536-dimensional vectors]:::azure
+            FoundryChat[Deployment: gpt-4.1-mini\nGrounded Chat Completion]:::azure
         end
     end
-    
-    FrontendReact --> API
-    FrontendStreamlit --> API
-    API --> SessionRouter
-    API --> UploadRouter
-    API --> ChatRouter
-    
-    UploadRouter --> BlobSvc
-    BlobSvc -->|1. Upload Multi-PDF Blobs| AzureBlob
-    BlobSvc -->|2. Generate Read SAS URLs| DocIntelSvc
-    DocIntelSvc -->|3. Extract Multi-Page Spans| AzureDocIntel
-    DocIntelSvc --> ChunkingSvc
-    ChunkingSvc --> EmbeddingSvc
-    EmbeddingSvc -->|4. Generate 1536-dim Vectors| AzureFoundryEmbed
-    EmbeddingSvc --> SearchSvc
-    SearchSvc -->|5. Index Chunks & Metadata| AzureAISearch
-    
-    ChatRouter --> EmbeddingSvc
-    ChatRouter --> SearchSvc
-    SearchSvc -->|6. KNN Vector Query + Session Filter| AzureAISearch
-    ChatRouter --> ChatSvc
-    ChatSvc -->|7. Grounded Multi-Doc Completion| AzureFoundryChat
+
+    ReactUI -->|REST / JSON| FastAPI
+    StreamlitUI -->|REST / JSON| FastAPI
+
+    FastAPI --> UploadEndpoint
+    FastAPI --> ChatEndpoint
+    FastAPI --> SessionService
+
+    UploadEndpoint -->|1. Store PDFs| BlobStore
+    UploadEndpoint -->|2. SAS Read URL| DocIntel
+    UploadEndpoint -->|3. Generate Chunks| FoundryEmbed
+    FoundryEmbed -->|4. Push Embeddings & Metadata| AISearch
+
+    ChatEndpoint -->|5. Query Embedding| FoundryEmbed
+    ChatEndpoint -->|6. KNN Vector Search + Session Filter| AISearch
+    AISearch -->|7. Retrieved Context Chunks| ChatEndpoint
+    ChatEndpoint -->|8. Grounded Prompt Completion| FoundryChat
+    FoundryChat -->|9. Structured Answer| ReactUI
 ```
 
 ---
@@ -70,31 +66,29 @@ graph TD
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User
-    participant Client as Frontend (React / Streamlit)
-    participant FastAPI as FastAPI (/sessions/{id}/upload)
-    participant BlobSvc as Azure Blob Storage
-    participant DocIntel as Azure Document Intelligence (S0)
-    participant Chunker as Chunking Service
-    participant Embedder as Azure AI Foundry (text-embedding-3-small)
-    participant AISearch as Azure AI Search (pdf-chat-index)
+    actor User as User Browser
+    participant UI as React / Streamlit Frontend
+    participant API as FastAPI Backend (/upload)
+    participant Blob as Azure Blob Storage
+    participant OCR as Azure Doc Intelligence (S0)
+    participant Embed as Azure AI Foundry (text-embedding-3-small)
+    participant VectorDB as Azure AI Search (pdf-chat-index)
 
-    User->>Client: Select PDF files & click Upload
-    Client->>FastAPI: POST /sessions/{sessionId}/upload (Multipart FormData)
-    FastAPI->>BlobSvc: Upload PDF blob under path {sessionId}/{docId}/{filename}
-    BlobSvc-->>FastAPI: Blob Storage URL
-    FastAPI->>BlobSvc: Generate short-lived Read SAS URL (15 min expiry)
-    BlobSvc-->>FastAPI: Read SAS URL
-    FastAPI->>DocIntel: Trigger prebuilt-read S0 model using Read SAS URL
-    DocIntel-->>FastAPI: result.content + page.spans offset metadata
-    FastAPI->>Chunker: Split page text (Chunk size: 1600, Overlap: 200)
-    Chunker-->>FastAPI: Text chunks tagged with 1-indexed page numbers
-    FastAPI->>Embedder: Generate 1536-dimensional vector embeddings
-    Embedder-->>FastAPI: List of 1536 float arrays
-    FastAPI->>AISearch: Upload documents (content, embedding, session_id, document_id, page_number)
-    AISearch-->>FastAPI: Index confirmation
-    FastAPI-->>Client: 200 OK (Filename, Pages, Chunks indexed)
-    Client-->>User: Render document summary card in UI
+    User->>UI: Select PDF files & click Upload
+    UI->>API: POST /sessions/{sessionId}/upload (Multipart FormData)
+    API->>Blob: Upload PDF blob to {sessionId}/{docId}/{filename}
+    Blob-->>API: Blob Storage URL Confirmation
+    API->>Blob: Generate short-lived Read SAS URL (15 min validity)
+    Blob-->>API: Read SAS URL
+    API->>OCR: Trigger prebuilt-read S0 model via Read SAS URL
+    OCR-->>API: result.content + page.spans character offsets
+    API->>API: Split text into chunks (1600 chars, 200 overlap)
+    API->>Embed: Generate 1536-dim embeddings for text chunks
+    Embed-->>API: List of 1536 float vector arrays
+    API->>VectorDB: Index chunks (content, embedding, session_id, doc_id, page_number)
+    VectorDB-->>API: Upload Acknowledgement
+    API-->>UI: 200 OK Response (Filename, Total Pages, Indexed Chunks)
+    UI-->>User: Display Document Summary Card in UI
 ```
 
 ---
@@ -104,27 +98,25 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User
-    participant Client as Frontend (React / Streamlit)
-    participant FastAPI as FastAPI (/sessions/{id}/chat)
-    participant Embedder as Azure AI Foundry (text-embedding-3-small)
-    participant AISearch as Azure AI Search (pdf-chat-index)
-    participant ChatSvc as Chat Service (Formatting Engine)
-    participant FoundryChat as Azure AI Foundry (gpt-4.1-mini)
+    actor User as User Browser
+    participant UI as React / Streamlit Frontend
+    participant API as FastAPI Backend (/chat)
+    participant Embed as Azure AI Foundry (text-embedding-3-small)
+    participant VectorDB as Azure AI Search (pdf-chat-index)
+    participant ChatLLM as Azure AI Foundry (gpt-4.1-mini)
 
-    User->>Client: Type question & submit
-    Client->>FastAPI: POST /sessions/{sessionId}/chat { question }
-    FastAPI->>Embedder: Generate query vector embedding (1536 dims)
-    Embedder-->>FastAPI: Query vector array
-    FastAPI->>AISearch: VectorizedQuery (k=8, filter: session_id eq '{sessionId}')
-    AISearch-->>FastAPI: Top matching chunks across multi-PDFs + Source filenames + Page numbers
-    FastAPI->>ChatSvc: Build context prompt template with retrieved chunks
-    ChatSvc->>FoundryChat: Send system prompt & grounded context payload (gpt-4.1-mini)
-    FoundryChat-->>ChatSvc: Generated raw response
-    ChatSvc->>ChatSvc: Normalize headings (**Summary**, **Key points**, **Sources**)
-    ChatSvc-->>FastAPI: Clean formatted markdown answer
-    FastAPI-->>Client: JSON response { answer, sources_detail }
-    Client-->>User: Render markdown message bubble with expandable citations
+    User->>UI: Submit question in chat bar
+    UI->>API: POST /sessions/{sessionId}/chat { question }
+    API->>Embed: Generate query vector embedding (1536 dims)
+    Embed-->>API: Query vector array
+    API->>VectorDB: KNN Query (k=8, filter: session_id eq '{sessionId}')
+    VectorDB-->>API: Top matching chunks across multi-PDFs + Page numbers
+    API->>API: Build system prompt template with retrieved context
+    API->>ChatLLM: Send grounded completion request
+    ChatLLM-->>API: Raw LLM response string
+    API->>API: Normalize section headers (**Summary**, **Key points**, **Sources**)
+    API-->>UI: Return JSON { answer, sources_detail }
+    UI-->>User: Render markdown message bubble with page citations
 ```
 
 ---
