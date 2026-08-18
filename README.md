@@ -26,20 +26,10 @@ Built end-to-end on **Azure AI Cloud Services** (Azure Blob Storage, Azure Docum
 
 ## 📸 Screenshots
 
-> [!TIP]
-> *Screenshots demonstrating the modern Material UI frontend dashboard and Azure RAG pipeline:*
+Click the links below to view high-resolution screenshots of the DocSpring interface:
 
-<p align="center">
-  <img src="docs/assets/screenshots/react_ui_dashboard.png" alt="DocSpring React MUI Dashboard" width="90%">
-  <br>
-  <em>Figure 1: DocSpring React MUI Dashboard — Multi-session Sidebar, Multi-PDF Dropzone, and Interactive Chat Interface.</em>
-</p>
-
-<p align="center">
-  <img src="docs/assets/screenshots/pdf_indexing_pipeline.png" alt="Multi-PDF Indexing & Citation Viewer" width="90%">
-  <br>
-  <em>Figure 2: Multi-PDF Document Summary Panel and Source Citation Drawer with Page-Level References.</em>
-</p>
+- 🖼️ [DocSpring Multi-PDF Dashboard & Session Navigation](docs/assets/screenshots/docspring_multi_pdf_dashboard.png) — Features the dark sidebar session list, active session stats, multi-PDF document summary panel, drag-and-drop file uploader, and interactive chat stream.
+- 🖼️ [Grounded AI Response & Citation Drawer](docs/assets/screenshots/docspring_single_pdf_chat.png) — Demonstrates AI response normalized into bold markdown headings (**Summary**, **Key points**) along with page-level source citations (`Page 1 Chunk 1`, `Page 2 Chunk 2`).
 
 ---
 
