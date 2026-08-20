@@ -66,20 +66,20 @@ Built end-to-end on Azure AI Cloud Services (Azure Blob Storage, Azure Document 
                         User PDF Uploads (Multiple PDFs)
                                      │
                                      ▼
-┌───────────────────────────────────────────────────────────────────┐
-│  FastAPI Backend  —  POST /sessions/{id}/upload                    │
+┌─────────────────────────────────────────────────────────────────────-┐
+│  FastAPI Backend  —  POST /sessions/{id}/upload                      │
 │                                                                      │
-│  1. Upload PDFs to Azure Blob Storage                               │
-│  2. Generate short-lived read SAS URL                               │
-│  3. Extract text and page spans via Azure Document Intelligence (S0)│
-│  4. Split text into overlapping chunks (1600 characters)            │
+│  1. Upload PDFs to Azure Blob Storage                                │
+│  2. Generate short-lived read SAS URL                                │
+│  3. Extract text and page spans via Azure Document Intelligence (S0) │
+│  4. Split text into overlapping chunks (1600 characters)             │
 │  5. Generate embeddings via Azure AI Foundry (text-embedding-3-small)│
 └──────────────────────────────────┬───────────────────────────────────┘
                                    │
                                    ▼
 ┌───────────────────────────────────────────────────────────────────┐
-│  Azure AI Search  —  Index: pdf-chat-index                          │
-│  HNSW vector index storing chunk text, embeddings, and metadata     │
+│  Azure AI Search  —  Index: pdf-chat-index                        │
+│  HNSW vector index storing chunk text, embeddings, and metadata   │
 └───────────────────────────────────────────────────────────────────┘
 ```
 
@@ -89,14 +89,14 @@ Built end-to-end on Azure AI Cloud Services (Azure Blob Storage, Azure Document 
                               User Question
                                      │
                                      ▼
-┌───────────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────────-┐
 │  FastAPI Backend  —  POST /sessions/{id}/chat                       │
-│                                                                      │
+│                                                                     │
 │  1. Generate query embedding via Azure AI Foundry (text-embedding)  │
 │  2. Query Azure AI Search KNN ($filter = session_id eq '{id}')      │
 │  3. Send top matching context to Azure AI Foundry (gpt-4.1-mini)    │
 │  4. Normalize response into headers (Summary, Key Points, Sources)  │
-└──────────────────────────────────┬───────────────────────────────────┘
+└──────────────────────────────────┬──────────────────────────────────┘
                                    │
                                    ▼
                     React 19 MUI Dashboard / Streamlit Interface
@@ -253,7 +253,7 @@ For complete step-by-step Azure resource provisioning, see [docs/setup_guide.md]
 
 ## API Endpoints Summary
 
-| Method   | Endpoint                     | Description                                                                 |
+| Method   | Endpoint                      | Description                                                                   |
 |----------|-------------------------------|-------------------------------------------------------------------------------|
 | `GET`    | `/sessions`                   | List all active chat sessions.                                                |
 | `POST`   | `/sessions`                   | Create a new chat session.                                                    |
