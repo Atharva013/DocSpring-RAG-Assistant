@@ -3,13 +3,10 @@ import { Paper, InputBase, IconButton, CircularProgress } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 
 /**
- * ChatInput component for user question entry.
- * MUI Components Used:
- * - Paper: https://mui.com/material-ui/react-paper/
- * - InputBase: https://mui.com/material-ui/react-input/
- * - IconButton: https://mui.com/material-ui/react-button/#icon-button
+ * ChatInput component for user question entry in Claude glassmorphism style.
+ * Dynamically adjusts position when sidebar opens or closes.
  */
-export default function ChatInput({ onSend, isDisabled }) {
+export default function ChatInput({ onSend, isDisabled, isSidebarOpen = true }) {
   const [question, setQuestion] = useState('');
 
   const handleSubmit = (e) => {
@@ -31,27 +28,28 @@ export default function ChatInput({ onSend, isDisabled }) {
     <Paper
       component="form"
       onSubmit={handleSubmit}
-      elevation={4}
+      elevation={6}
       sx={{
         position: 'fixed',
         bottom: 24,
-        left: { xs: 16, sm: 300 },
-        right: 24,
-        maxWidth: 900,
+        left: isSidebarOpen ? { xs: 16, md: 324 } : { xs: 16, md: 32 },
+        right: { xs: 16, md: 32 },
+        maxWidth: 920,
         margin: '0 auto',
-        p: '4px 8px 4px 20px',
+        p: '6px 10px 6px 22px',
         display: 'flex',
         alignItems: 'center',
         borderRadius: 60,
-        backgroundColor: '#ffffff',
-        border: '2px solid #16a34a',
-        boxShadow: '0 8px 30px rgba(22, 163, 74, 0.15)',
+        backgroundColor: 'rgba(24, 24, 27, 0.92)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(16, 185, 129, 0.4)',
+        boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4)',
         zIndex: 1100,
         animation: 'slideUpFade 0.45s ease-out forwards',
-        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         '&:focus-within': {
-          borderColor: '#15803d',
-          boxShadow: '0 12px 40px rgba(22, 163, 74, 0.3)',
+          borderColor: '#10b981',
+          boxShadow: '0 16px 50px rgba(16, 185, 129, 0.35)',
           transform: 'translateY(-2px)',
         },
       }}
@@ -62,9 +60,9 @@ export default function ChatInput({ onSend, isDisabled }) {
           flex: 1,
           fontSize: '0.98rem',
           fontWeight: 500,
-          color: '#0f172a',
+          color: '#ffffff',
           '& input::placeholder': {
-            color: '#64748b',
+            color: '#a1a1aa',
             opacity: 0.9,
           },
         }}
@@ -82,21 +80,21 @@ export default function ChatInput({ onSend, isDisabled }) {
         disabled={!question.trim() || isDisabled}
         sx={{
           p: '10px',
-          backgroundColor: '#16a34a',
+          backgroundColor: '#10b981',
           color: '#ffffff',
-          boxShadow: '0 4px 14px rgba(22, 163, 74, 0.4)',
+          boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
           transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
           '&:hover': {
-            backgroundColor: '#15803d',
-            transform: 'scale(1.12) rotate(-8deg)',
-            boxShadow: '0 6px 18px rgba(22, 163, 74, 0.5)',
+            backgroundColor: '#059669',
+            transform: 'scale(1.1) rotate(-6deg)',
+            boxShadow: '0 6px 18px rgba(16, 185, 129, 0.55)',
           },
           '&:active': {
             transform: 'scale(0.95) rotate(0deg)',
           },
           '&.Mui-disabled': {
-            backgroundColor: '#86efac',
-            color: '#ffffff',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            color: '#71717a',
           },
         }}
       >

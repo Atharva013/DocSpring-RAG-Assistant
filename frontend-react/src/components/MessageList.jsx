@@ -31,16 +31,15 @@ const getUniqueSources = (sourcesDetail) => {
 const formatMessageMarkdown = (text) => {
   if (!text) return '';
   let formatted = text.trim();
-  // Ensure standalone bold section titles have space
   formatted = formatted.replace(/([^\n])\n(\*\*[^*]+\*\*)\n/g, '$1\n\n$2\n');
   formatted = formatted.replace(/\n{3,}/g, '\n\n');
   return formatted;
 };
 
 /**
- * Glorified MessageList component displaying user questions and AI responses.
- * Features custom logo avatar, dynamic Gemini/GPT style rendering,
- * deduplicated source citation chips, and smooth entrance micro-animations.
+ * MessageList component displaying user questions and AI responses.
+ * Features glassy light brown AI response cards with elegant curved ends,
+ * clear spacing gap above the floating input, and proprietary branding.
  */
 export default function MessageList({ messages = [], isThinking, onSelectSuggestion }) {
   const [copiedIndex, setCopiedIndex] = useState(null);
@@ -65,14 +64,14 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
           textAlign: 'center',
           py: 6,
           px: { xs: 2.5, sm: 5 },
-          mb: 4,
-          borderRadius: 5,
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)',
+          mb: 6,
+          borderRadius: '24px',
+          background: 'rgba(24, 24, 27, 0.75)',
           backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
           boxSizing: 'border-box',
           maxWidth: '100%',
-          color: '#ffffff',
+          color: '#f4f4f5',
           animation: 'fadeInScale 0.4s ease-out forwards',
         }}
       >
@@ -84,9 +83,9 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
             overflow: 'hidden',
             mx: 'auto',
             mb: 2.5,
-            p: '3px',
-            background: 'linear-gradient(135deg, #22c55e 0%, #06b6d4 50%, #f97316 100%)',
-            boxShadow: '0 0 24px rgba(34, 197, 94, 0.45)',
+            p: '2px',
+            background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+            boxShadow: '0 0 24px rgba(16, 185, 129, 0.4)',
             animation: 'pulseGlow 3.5s infinite ease-in-out',
           }}
         >
@@ -98,12 +97,12 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
           />
         </Box>
 
-        <Typography variant="h5" sx={{ color: '#ffffff', fontWeight: 900, mb: 1, letterSpacing: '-0.01em' }}>
+        <Typography variant="h5" sx={{ color: '#ffffff', fontWeight: 800, mb: 1, letterSpacing: '-0.01em' }}>
           Ask Any Question About Your Uploaded PDFs
         </Typography>
 
-        <Typography variant="body2" sx={{ color: '#94a3b8', maxWidth: 520, mx: 'auto', mb: 3.5, fontSize: '0.92rem' }}>
-          Upload your PDF documents above, then type a question or select one of these quick prompt suggestions:
+        <Typography variant="body2" sx={{ color: '#a1a1aa', maxWidth: 520, mx: 'auto', mb: 3.5, fontSize: '0.92rem' }}>
+          Upload PDF documents above, then type a question or select a quick suggestion below:
         </Typography>
 
         <Box
@@ -127,18 +126,17 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
                 px: 1.8,
                 borderRadius: '16px',
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                color: '#f8fafc',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#f4f4f5',
                 fontWeight: 600,
                 fontSize: '0.86rem',
                 cursor: 'pointer',
                 transition: 'all 0.22s ease',
                 '&:hover': {
-                  borderColor: '#22c55e',
-                  backgroundColor: 'rgba(34, 197, 94, 0.18)',
-                  color: '#4ade80',
-                  transform: 'translateY(-3px)',
-                  boxShadow: '0 6px 20px rgba(34, 197, 94, 0.25)',
+                  borderColor: '#10b981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  color: '#34d399',
+                  transform: 'translateY(-2px)',
                 },
               }}
             />
@@ -149,7 +147,7 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
   }
 
   return (
-    <Stack spacing={2.8} sx={{ mb: 4 }}>
+    <Stack spacing={3.2} sx={{ mb: 10, pb: 6 }}>
       {messages.map((msg, index) => {
         const isUser = msg.role === 'user';
         const isCopied = copiedIndex === index;
@@ -170,10 +168,10 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
             {isUser ? (
               <Avatar
                 sx={{
-                  width: 42,
-                  height: 42,
-                  backgroundColor: '#16a34a',
-                  boxShadow: '0 4px 16px rgba(22, 163, 74, 0.4)',
+                  width: 40,
+                  height: 40,
+                  backgroundColor: '#10b981',
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
                 }}
               >
                 <PersonIcon fontSize="small" />
@@ -181,12 +179,12 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
             ) : (
               <Box
                 sx={{
-                  width: 42,
-                  height: 42,
+                  width: 40,
+                  height: 40,
                   borderRadius: '50%',
                   p: '2px',
-                  background: 'linear-gradient(135deg, #22c55e 0%, #06b6d4 100%)',
-                  boxShadow: '0 0 16px rgba(34, 197, 94, 0.4)',
+                  background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)',
+                  boxShadow: '0 0 16px rgba(217, 119, 6, 0.4)',
                   flexShrink: 0,
                 }}
               >
@@ -203,22 +201,27 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
             <Paper
               elevation={0}
               sx={{
-                p: 2.8,
+                p: 3,
                 maxWidth: '85%',
                 position: 'relative',
-                borderRadius: isUser ? '24px 24px 4px 24px' : '24px 24px 24px 4px',
-                backgroundColor: isUser ? '#16a34a' : '#ffffff',
-                color: isUser ? '#ffffff' : '#0f172a',
-                border: isUser ? 'none' : '1px solid #e2e8f0',
-                boxShadow: isUser ? '0 6px 20px rgba(22, 163, 74, 0.3)' : '0 4px 20px rgba(0, 0, 0, 0.05)',
-                transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+                borderRadius: '24px',
+                backgroundColor: isUser ? '#059669' : 'rgba(38, 28, 20, 0.88)',
+                backdropFilter: isUser ? 'none' : 'blur(24px)',
+                color: isUser ? '#ffffff' : '#fef3c7',
+                border: isUser ? 'none' : '1px solid rgba(217, 119, 6, 0.35)',
+                boxShadow: isUser
+                  ? '0 6px 20px rgba(5, 150, 105, 0.35)'
+                  : '0 10px 35px rgba(0, 0, 0, 0.45), 0 0 20px rgba(217, 119, 6, 0.12)',
+                transition: 'box-shadow 0.25s ease, transform 0.25s ease',
                 '&:hover': {
-                  boxShadow: isUser ? '0 8px 24px rgba(22, 163, 74, 0.4)' : '0 8px 25px rgba(0, 0, 0, 0.08)',
+                  boxShadow: isUser
+                    ? '0 8px 24px rgba(5, 150, 105, 0.45)'
+                    : '0 14px 45px rgba(0, 0, 0, 0.55), 0 0 25px rgba(217, 119, 6, 0.2)',
                 },
               }}
             >
               {isUser ? (
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: '0.98rem', fontWeight: 500 }}>
+                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.65, fontSize: '0.98rem', fontWeight: 500 }}>
                   {msg.message}
                 </Typography>
               ) : (
@@ -227,34 +230,34 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
                     <Box
                       sx={{
                         fontSize: '0.96rem',
-                        lineHeight: 1.75,
-                        color: '#0f172a',
+                        lineHeight: 1.8,
+                        color: '#fef3c7',
                         flex: 1,
                         '& p': { m: 0, mb: 1.4 },
                         '& p:last-child': { mb: 0 },
-                        '& h1, & h2, & h3, & h4, & h5, & h6': { fontWeight: 800, mt: 2, mb: 1, color: '#0f172a' },
+                        '& h1, & h2, & h3, & h4, & h5, & h6': { fontWeight: 800, mt: 2, mb: 1, color: '#fef08a' },
                         '& ul, & ol': { pl: 2.5, m: 0, mb: 1.4 },
                         '& li': { mb: 0.6 },
-                        '& strong, & b': { fontWeight: 800, color: '#16a34a', display: 'inline-block' },
-                        '& code': { backgroundColor: '#f1f5f9', p: '2px 6px', borderRadius: 1, fontFamily: 'monospace', fontSize: '0.88em' },
+                        '& strong, & b': { fontWeight: 800, color: '#fbbf24', display: 'inline-block' },
+                        '& code': { backgroundColor: 'rgba(255, 255, 255, 0.08)', p: '2px 6px', borderRadius: 1, fontFamily: 'monospace', fontSize: '0.88em', color: '#fde68a' },
                       }}
                     >
                       <ReactMarkdown
                         components={{
-                          h1: ({ children }) => <Typography variant="h6" sx={{ fontWeight: 800, color: '#0f172a', mt: 2, mb: 1 }}>{children}</Typography>,
-                          h2: ({ children }) => <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0f172a', mt: 2, mb: 1 }}>{children}</Typography>,
-                          h3: ({ children }) => <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0f172a', mt: 1.5, mb: 0.5 }}>{children}</Typography>,
+                          h1: ({ children }) => <Typography variant="h6" sx={{ fontWeight: 800, color: '#fef08a', mt: 2, mb: 1 }}>{children}</Typography>,
+                          h2: ({ children }) => <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#fef08a', mt: 2, mb: 1 }}>{children}</Typography>,
+                          h3: ({ children }) => <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#fef08a', mt: 1.5, mb: 0.5 }}>{children}</Typography>,
                           strong: ({ children }) => (
                             <Typography
                               component="span"
                               sx={{
                                 fontWeight: 800,
-                                color: '#0f172a',
-                                fontSize: '1rem',
+                                color: '#fef08a',
+                                fontSize: '0.98rem',
                                 display: 'block',
                                 mt: 1.5,
                                 mb: 0.5,
-                                background: 'linear-gradient(135deg, #0f172a 0%, #16a34a 100%)',
+                                background: 'linear-gradient(135deg, #fef08a 0%, #f59e0b 100%)',
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                               }}
@@ -274,10 +277,10 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
                         size="small"
                         onClick={() => handleCopy(msg.message, index)}
                         sx={{
-                          ml: 1,
-                          color: '#64748b',
+                          ml: 1.5,
+                          color: '#d97706',
                           transition: 'all 0.2s ease',
-                          '&:hover': { color: '#16a34a', backgroundColor: '#f0fdf4', transform: 'scale(1.1)' },
+                          '&:hover': { color: '#fbbf24', backgroundColor: 'rgba(217, 119, 6, 0.2)', transform: 'scale(1.1)' },
                         }}
                       >
                         {isCopied ? <CheckIcon fontSize="small" color="success" /> : <ContentCopyIcon fontSize="small" />}
@@ -287,8 +290,8 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
 
                   {/* Deduplicated Source Citation Chips */}
                   {uniqueSources.length > 0 && (
-                    <Box sx={{ mt: 2.5, pt: 1.8, borderTop: '1px solid #f1f5f9' }}>
-                      <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 800, display: 'block', mb: 1, letterSpacing: '0.04em' }}>
+                    <Box sx={{ mt: 2.5, pt: 1.8, borderTop: '1px solid rgba(217, 119, 6, 0.25)' }}>
+                      <Typography variant="caption" sx={{ color: '#fbbf24', fontWeight: 800, display: 'block', mb: 1, letterSpacing: '0.04em' }}>
                         CITED SOURCES
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -296,17 +299,17 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
                           <Chip
                             key={i}
                             size="small"
-                            icon={<BookmarkBorderIcon style={{ fontSize: 13, color: '#16a34a' }} />}
+                            icon={<BookmarkBorderIcon style={{ fontSize: 13, color: '#f59e0b' }} />}
                             label={`${src.file}${src.page ? ` · p.${src.page}` : ''}`}
                             sx={{
-                              backgroundColor: '#f0fdf4',
-                              border: '1px solid #d1fae5',
-                              color: '#15803d',
+                              backgroundColor: 'rgba(217, 119, 6, 0.18)',
+                              border: '1px solid rgba(217, 119, 6, 0.35)',
+                              color: '#fbbf24',
                               fontWeight: 700,
                               fontSize: '0.74rem',
                               transition: 'all 0.2s ease',
                               '&:hover': {
-                                backgroundColor: '#dcfce7',
+                                backgroundColor: 'rgba(217, 119, 6, 0.3)',
                                 transform: 'translateY(-1px)',
                               },
                             }}
@@ -327,12 +330,12 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', animation: 'fadeInScale 0.3s ease-out forwards' }}>
           <Box
             sx={{
-              width: 42,
-              height: 42,
+              width: 40,
+              height: 40,
               borderRadius: '50%',
               p: '2px',
-              background: 'linear-gradient(135deg, #22c55e 0%, #06b6d4 100%)',
-              boxShadow: '0 0 18px rgba(34, 197, 94, 0.5)',
+              background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)',
+              boxShadow: '0 0 16px rgba(217, 119, 6, 0.5)',
               animation: 'pulseGlow 2s infinite ease-in-out',
             }}
           >
@@ -347,17 +350,18 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
             elevation={0}
             sx={{
               p: 2.2,
-              borderRadius: '24px 24px 24px 4px',
-              backgroundColor: '#ffffff',
-              border: '1px solid #bbf7d0',
-              boxShadow: '0 4px 16px rgba(22, 163, 74, 0.15)',
+              borderRadius: '24px',
+              backgroundColor: 'rgba(38, 28, 20, 0.88)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(217, 119, 6, 0.4)',
+              boxShadow: '0 4px 20px rgba(217, 119, 6, 0.25)',
               display: 'flex',
               alignItems: 'center',
               gap: 1.5,
               animation: 'pulseGlow 2.5s infinite ease-in-out',
             }}
           >
-            <Typography variant="body2" sx={{ color: '#16a34a', fontWeight: 700 }}>
+            <Typography variant="body2" sx={{ color: '#fbbf24', fontWeight: 700 }}>
               🧠 RAG Pipeline active — searching vectors & generating response…
             </Typography>
           </Paper>

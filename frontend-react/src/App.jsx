@@ -7,6 +7,7 @@ import UploadPanel from './components/UploadPanel';
 import MessageList from './components/MessageList';
 import ChatInput from './components/ChatInput';
 import DeleteDialog from './components/DeleteDialog';
+import ThreeBackgroundCanvas from './components/ThreeBackgroundCanvas';
 
 import {
   getSessions,
@@ -22,6 +23,8 @@ export default function App() {
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [sessionDetail, setSessionDetail] = useState(null);
   const [modelInfo, setModelInfo] = useState({ chat_model: '—', embedding_model: '—' });
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [isThinking, setIsThinking] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -178,17 +181,24 @@ export default function App() {
       sx={{
         display: 'flex',
         minHeight: '100vh',
-        backgroundColor: '#090d16',
+        backgroundColor: '#111113',
         backgroundImage: `
-          radial-gradient(at 0% 0%, rgba(34, 197, 94, 0.08) 0px, transparent 50%),
-          radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
-          radial-gradient(at 50% 100%, rgba(249, 115, 22, 0.05) 0px, transparent 50%)
+          radial-gradient(at 10% 10%, rgba(16, 185, 129, 0.07) 0px, transparent 50%),
+          radial-gradient(at 90% 10%, rgba(6, 182, 212, 0.07) 0px, transparent 50%),
+          radial-gradient(at 50% 90%, rgba(249, 115, 22, 0.04) 0px, transparent 50%)
         `,
-        color: '#f8fafc',
+        color: '#f4f4f5',
+        position: 'relative',
+        overflowX: 'hidden',
       }}
     >
-      {/* Sidebar Navigation */}
+      {/* Full Viewport 3D Surreal Three.js Background Canvas */}
+      <ThreeBackgroundCanvas interactive={true} />
+
+      {/* Claude-Style Sidebar Navigation */}
       <Sidebar
+        isOpen={isSidebarOpen}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         sessions={sessions}
         activeSessionId={activeSessionId}
         onSelectSession={loadSession}
@@ -197,15 +207,27 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 4 }, pb: 16, overflowX: 'hidden' }}>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: { xs: 2, md: 4 },
+          pb: { xs: 26, md: 32 },
+          position: 'relative',
+          zIndex: 1,
+          transition: 'margin 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
         <Container maxWidth="lg">
-          {/* Top Hero Card Widget */}
+          {/* Top Hero Glass Bar Widget */}
           <HeroHeader
             title={activeSessionObj.title || 'New chat'}
             updatedAt={activeSessionObj.updated_at}
             chunkCount={totalChunks}
             chatModel={modelInfo.chat_model}
             embedModel={modelInfo.embedding_model}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             onDelete={() => setDeleteModal({ open: true, target: activeSessionObj })}
           />
 
@@ -223,7 +245,7 @@ export default function App() {
           <MessageList messages={messages} isThinking={isThinking} onSelectSuggestion={handleSendQuestion} />
 
           {/* Message Input Pill */}
-          <ChatInput onSend={handleSendQuestion} isDisabled={isThinking} />
+          <ChatInput onSend={handleSendQuestion} isDisabled={isThinking} isSidebarOpen={isSidebarOpen} />
         </Container>
       </Box>
 

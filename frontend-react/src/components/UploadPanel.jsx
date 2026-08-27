@@ -15,8 +15,7 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 /**
- * UploadPanel component for PDF drag-and-drop file upload.
- * Uses useRef for 100% reliable file selection clicks and HTML5 Drag & Drop.
+ * UploadPanel component for PDF drag-and-drop file upload in dark glass design system.
  */
 export default function UploadPanel({ onUpload, isUploading, uploadStatus }) {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -70,33 +69,35 @@ export default function UploadPanel({ onUpload, isUploading, uploadStatus }) {
     <Accordion
       defaultExpanded
       sx={{
-        mb: 2.5,
+        mb: 3,
         borderRadius: '20px !important',
-        border: '1px solid rgba(34, 197, 94, 0.2)',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
         overflow: 'hidden',
-        background: '#ffffff',
+        background: 'rgba(24, 24, 27, 0.75)',
+        backdropFilter: 'blur(20px)',
+        color: '#f4f4f5',
         '&::before': { display: 'none' },
       }}
     >
-      <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#16a34a' }} />} sx={{ backgroundColor: '#ffffff', px: 2.5, py: 0.5 }}>
+      <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#10b981' }} />} sx={{ px: 2.5, py: 0.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
               width: 32,
               height: 32,
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#ffffff',
-              boxShadow: '0 3px 10px rgba(22, 163, 74, 0.3)',
+              boxShadow: '0 3px 10px rgba(16, 185, 129, 0.3)',
             }}
           >
             <CloudUploadIcon sx={{ fontSize: 18 }} />
           </Box>
-          <Typography variant="h6" sx={{ fontSize: '1.02rem', color: '#0f172a', fontWeight: 800 }}>
+          <Typography variant="h6" sx={{ fontSize: '1rem', color: '#f4f4f5', fontWeight: 800 }}>
             Upload PDF Documents
           </Typography>
         </Box>
@@ -120,43 +121,40 @@ export default function UploadPanel({ onUpload, isUploading, uploadStatus }) {
           onDrop={handleDrop}
           sx={{
             p: 3.5,
-            borderRadius: 4,
-            border: isDragging ? '2px dashed #22c55e' : '2px dashed #86efac',
-            backgroundColor: isDragging ? 'rgba(220, 252, 231, 0.8)' : '#f0fdf4',
-            background: isDragging
-              ? 'rgba(220, 252, 231, 0.8)'
-              : 'linear-gradient(135deg, rgba(240, 253, 244, 0.8) 0%, rgba(255, 255, 255, 0.95) 100%)',
+            borderRadius: '16px',
+            border: isDragging ? '2px dashed #10b981' : '2px dashed rgba(16, 185, 129, 0.4)',
+            backgroundColor: isDragging ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.02)',
             textAlign: 'center',
             cursor: 'pointer',
             transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: isDragging ? '0 0 0 5px rgba(34, 197, 94, 0.2)' : '0 2px 10px rgba(22, 163, 74, 0.05)',
+            boxShadow: isDragging ? '0 0 20px rgba(16, 185, 129, 0.25)' : 'none',
             '&:hover': {
-              borderColor: '#16a34a',
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
               transform: 'translateY(-2px)',
-              boxShadow: '0 6px 20px rgba(22, 163, 74, 0.12)',
             },
           }}
         >
-          <PictureAsPdfIcon sx={{ fontSize: 44, color: '#16a34a', mb: 1 }} />
+          <PictureAsPdfIcon sx={{ fontSize: 44, color: '#10b981', mb: 1 }} />
 
-          <Typography variant="body1" sx={{ fontWeight: 800, color: '#14532d', fontSize: '1.05rem' }}>
+          <Typography variant="body1" sx={{ fontWeight: 800, color: '#ffffff', fontSize: '1.05rem' }}>
             {selectedFile ? selectedFile.name : 'Click to Upload or Drag & Drop PDF here'}
           </Typography>
 
-          <Typography variant="caption" sx={{ color: '#166534', display: 'block', mt: 0.5, fontWeight: 600 }}>
+          <Typography variant="caption" sx={{ color: '#a1a1aa', display: 'block', mt: 0.5, fontWeight: 500 }}>
             Supports PDF files up to 20MB
           </Typography>
 
           <Chip
-            label=" Azure AI Search RAG Vector Indexing"
+            label="Azure AI Search RAG Vector Indexing"
             size="small"
             sx={{
               mt: 1.5,
-              backgroundColor: '#dcfce7',
-              color: '#15803d',
+              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+              color: '#34d399',
               fontWeight: 700,
               fontSize: '0.72rem',
-              border: '1px solid #bbf7d0',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
             }}
           />
         </Box>
@@ -164,8 +162,8 @@ export default function UploadPanel({ onUpload, isUploading, uploadStatus }) {
         {/* Progress bar */}
         {isUploading && (
           <Box sx={{ mt: 2 }}>
-            <LinearProgress color="primary" sx={{ height: 6, borderRadius: 3 }} />
-            <Typography variant="caption" sx={{ color: '#16a34a', mt: 0.8, display: 'block', textAlign: 'center', fontWeight: 700 }}>
+            <LinearProgress sx={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.1)', '& .MuiLinearProgress-bar': { backgroundColor: '#10b981' } }} />
+            <Typography variant="caption" sx={{ color: '#34d399', mt: 0.8, display: 'block', textAlign: 'center', fontWeight: 700 }}>
               Parsing PDF text & generating 1536-dim vectors...
             </Typography>
           </Box>
@@ -176,7 +174,14 @@ export default function UploadPanel({ onUpload, isUploading, uploadStatus }) {
           <Alert
             severity={uploadStatus.type}
             icon={<CheckCircleIcon fontSize="inherit" />}
-            sx={{ mt: 2, borderRadius: 3, fontWeight: 600 }}
+            sx={{
+              mt: 2,
+              borderRadius: '14px',
+              fontWeight: 600,
+              backgroundColor: uploadStatus.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+              color: uploadStatus.type === 'success' ? '#34d399' : '#f87171',
+              border: uploadStatus.type === 'success' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+            }}
           >
             {uploadStatus.message}
           </Alert>
