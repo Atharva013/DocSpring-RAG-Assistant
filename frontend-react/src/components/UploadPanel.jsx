@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Accordion,
   AccordionSummary,
@@ -15,12 +15,20 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 /**
- * UploadPanel component for PDF drag-and-drop file upload in dark glass design system.
+ * UploadPanel component for PDF drag-and-drop file upload.
+ * Handles HTML5 Drag & Drop and standard click file selection smoothly.
  */
 export default function UploadPanel({ onUpload, isUploading, uploadStatus }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Clear selected file when switching sessions or starting a new chat
+  useEffect(() => {
+    if (!uploadStatus) {
+      setSelectedFile(null);
+    }
+  }, [uploadStatus]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -37,9 +45,16 @@ export default function UploadPanel({ onUpload, isUploading, uploadStatus }) {
     }
   };
 
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
     setIsDragging(true);
   };
 
@@ -54,13 +69,15 @@ export default function UploadPanel({ onUpload, isUploading, uploadStatus }) {
     e.stopPropagation();
     setIsDragging(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+    const files = e.dataTransfer ? e.dataTransfer.files : null;
+    if (files && files.length > 0) {
+      const file = files[0];
+      const isPdf = file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf';
+      if (isPdf) {
         setSelectedFile(file);
         onUpload(file);
       } else {
-        alert('Please drop a valid PDF file.');
+        alert('Only PDF files are supported. Please drop a valid .pdf document.');
       }
     }
   };
@@ -108,7 +125,7 @@ export default function UploadPanel({ onUpload, isUploading, uploadStatus }) {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf"
+          accept=".pdf,application/pdf"
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />
@@ -116,6 +133,7 @@ export default function UploadPanel({ onUpload, isUploading, uploadStatus }) {
         {/* Dropzone Box */}
         <Box
           onClick={handleBoxClick}
+          onDragEnter={handleDragEnter}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -123,11 +141,11 @@ export default function UploadPanel({ onUpload, isUploading, uploadStatus }) {
             p: 3.5,
             borderRadius: '16px',
             border: isDragging ? '2px dashed #10b981' : '2px dashed rgba(16, 185, 129, 0.4)',
-            backgroundColor: isDragging ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.02)',
+            backgroundColor: isDragging ? 'rgba(16, 185, 129, 0.18)' : 'rgba(255, 255, 255, 0.02)',
             textAlign: 'center',
             cursor: 'pointer',
             transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: isDragging ? '0 0 20px rgba(16, 185, 129, 0.25)' : 'none',
+            boxShadow: isDragging ? '0 0 24px rgba(16, 185, 129, 0.35)' : 'none',
             '&:hover': {
               borderColor: '#10b981',
               backgroundColor: 'rgba(16, 185, 129, 0.08)',
