@@ -130,7 +130,11 @@ async def upload_pdf(session_id: str, file: UploadFile = File(...)) -> UploadRes
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found.")
 
-    if file.content_type != "application/pdf":
+    is_pdf = (
+        (file.filename and file.filename.lower().endswith(".pdf"))
+        or file.content_type in ("application/pdf", "application/x-pdf", "application/octet-stream", "")
+    )
+    if not is_pdf:
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
     # Read & validate size without blocking the loop (file.read is already async)
