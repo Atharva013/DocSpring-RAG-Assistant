@@ -47,35 +47,36 @@ import re
 
 def format_answer_markdown(answer: str) -> str:
     """
-    Normalizes AI generated answers so section headers ('Summary', 'Key points', 'Sources')
-    are consistently formatted as bold markdown headings on their own lines.
+    Normalizes AI generated answers so markdown headings and bold section titles
+    are cleanly formatted on their own lines with proper spacing.
     """
     if not answer:
         return ""
 
     text = answer.strip()
 
-    # Standardize 'Summary:', 'Summary\n', '### Summary', '# Summary' -> '**Summary**\n'
-    text = re.sub(r'^(?:#+\s*)?Summary\s*:\s*', '**Summary**\n', text, flags=re.IGNORECASE | re.MULTILINE)
-    text = re.sub(r'^(?:#+\s*)Summary\b', '**Summary**', text, flags=re.IGNORECASE | re.MULTILINE)
+    # Convert markdown ATX headings (### Heading -> **Heading**) for clean unified style
+    text = re.sub(r'^(?:#+\s*)([^\n]+)', r'**\1**', text, flags=re.MULTILINE)
 
-    # Standardize 'Key points:', 'Key Points:', '### Key points' -> '\n\n**Key points**\n'
-    text = re.sub(r'^(?:#+\s*)?Key\s+[pP]oints\s*:\s*', '\n\n**Key points**\n', text, flags=re.IGNORECASE | re.MULTILINE)
-    text = re.sub(r'^(?:#+\s*)Key\s+[pP]oints\b', '\n\n**Key points**', text, flags=re.IGNORECASE | re.MULTILINE)
+    # Standardize section labels ending with colon like 'Overview:' -> '**Overview**'
+    text = re.sub(r'^\*\*(.*?)\*\*\s*:\s*', r'**\1**\n', text, flags=re.MULTILINE)
 
-    # Standardize 'Sources:', 'Cited Sources:', '### Sources' -> '\n\n**Sources**\n'
-    text = re.sub(r'^(?:#+\s*)?(?:Cited\s+)?Sources\s*:\s*', '\n\n**Sources**\n', text, flags=re.IGNORECASE | re.MULTILINE)
-    text = re.sub(r'^(?:#+\s*)(?:Cited\s+)?Sources\b', '\n\n**Sources**', text, flags=re.IGNORECASE | re.MULTILINE)
+    # Ensure empty line before standalone bold headers (if not at top of text)
+    text = re.sub(r'([^\n])\n(\*\*[^*]+\*\*)\n', r'\1\n\n\2\n', text)
 
     # Clean up excessive newlines
     text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
 
 
-def generate_answer(question: str, chunks: list[dict]) -> str:
+def generate_answer(
+    question: str,
+    chunks: list[dict],
+    history: list[dict] | None = None,
+) -> str:
     """
-    Produces a grounded answer from retrieved chunks. If the answer is not
-    present in the context, the model is instructed to say so clearly.
+    Produces a grounded, dynamically formatted answer from retrieved chunks and
+    conversation history (Gemini/GPT style).
     """
     if not chunks:
         return (
@@ -87,29 +88,42 @@ def generate_answer(question: str, chunks: list[dict]) -> str:
     client = _get_client()
     context = _build_context(chunks)
 
+    system_prompt = (
+        "You are DocSpring AI, an enterprise-grade Retrieval-Augmented Generation (RAG) assistant specialized in analyzing PDF documents.\n\n"
+        "RESPONSE FORMATTING & STYLE:\n"
+        "1. DYNAMIC PRESENTATION:\n"
+        "   - Adapt your output structure flexibly based on the user's question, intent, and turn in the conversation.\n"
+        "   - For initial document questions, comprehensive analyses, or multi-faceted inquiries: structure your response with bold section headers on their own lines (e.g., **Overview**, **Key Details**, **Analysis**, **Sources**) followed by clean regular text paragraphs or bullet points.\n"
+        "   - For follow-up questions, quick clarifications, brief requests, or direct conversation (e.g. 'explain point 2', 'summarize in 1 sentence', 'thanks'): reply directly, naturally, and concisely without forcing repetitive boilerplate headers like Summary/Key points.\n"
+        "   - Always use bold syntax (**Heading Title**) for section titles, and keep the main content in clear regular body text.\n\n"
+        "2. STRICT RAG GROUNDING & CITATIONS:\n"
+        "   - Answer strictly using the provided PDF context chunks.\n"
+        "   - If the provided context does not contain enough information to answer the question, clearly state that you could not find the answer in the uploaded documents.\n"
+        "   - Cite exact source filenames and page numbers in inline format where relevant, e.g. [Source: filename.pdf, Page X].\n"
+    )
+
+    messages = [{"role": "system", "content": system_prompt}]
+
+    # Append recent chat history if available (up to 8 previous turns)
+    if history:
+        for msg in history[-8:]:
+            role = msg.get("role")
+            content = msg.get("message") or msg.get("content")
+            if role in ("user", "assistant") and content:
+                messages.append({"role": role, "content": content})
+
+    # Append current context + user question
+    messages.append(
+        {
+            "role": "user",
+            "content": f"Retrieved PDF Context:\n{context}\n\nUser Question: {question}",
+        }
+    )
+
     response = client.chat.completions.create(
         model=settings.azure_openai_chat_deployment,
-        temperature=0.2,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are DocSpring, a helpful RAG assistant for PDFs. "
-                    "Answer only from the provided PDF context. If the context "
-                    "does not contain the answer, say that you could not find it. "
-                    "Format every answer using bold markdown section headings on their own line:\n\n"
-                    "**Summary**\n<1-2 sentence overview>\n\n"
-                    "**Key points**\n<bullet points>\n\n"
-                    "**Sources**\n<bullet list of source documents and page numbers>\n\n"
-                    "Always use bold syntax (**Summary**, **Key points**, **Sources**) for section headers. "
-                    "Keep answers clear, practical, and cite source filenames and page numbers where relevant."
-                ),
-            },
-            {
-                "role": "user",
-                "content": f"PDF context:\n{context}\n\nQuestion: {question}",
-            },
-        ],
+        temperature=0.25,
+        messages=messages,
     )
 
     raw_answer = response.choices[0].message.content or ""

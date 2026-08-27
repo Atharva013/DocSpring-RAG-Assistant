@@ -4,7 +4,8 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', sans-serif;
-  background-color: #f8fafc;
+  background-color: #090d16;
+  color: #f8fafc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -20,12 +21,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgba(34, 197, 94, 0.5);
 }
 
 /* Animations & Micro-interactions */

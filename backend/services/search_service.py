@@ -26,7 +26,7 @@ from backend.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
-UPLOAD_BATCH_SIZE = 100
+UPLOAD_BATCH_SIZE = 100  # How many embeddings are uploaded and stored into the Azure search index
 
 EMBEDDING_DIMENSIONS = 1536  # matches text-embedding-3-small output size
 VECTOR_PROFILE_NAME = "default-vector-profile"
