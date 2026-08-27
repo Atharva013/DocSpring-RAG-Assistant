@@ -147,7 +147,7 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
   }
 
   return (
-    <Stack spacing={3.2} sx={{ mb: 10, pb: 6 }}>
+    <Stack spacing={3} sx={{ mb: 4, pb: 2 }}>
       {messages.map((msg, index) => {
         const isUser = msg.role === 'user';
         const isCopied = copiedIndex === index;
@@ -362,7 +362,7 @@ export default function MessageList({ messages = [], isThinking, onSelectSuggest
             }}
           >
             <Typography variant="body2" sx={{ color: '#fbbf24', fontWeight: 700 }}>
-              🧠 RAG Pipeline active — searching vectors & generating response…
+               RAG Pipeline active — searching vectors & generating response…
             </Typography>
           </Paper>
         </Box>
