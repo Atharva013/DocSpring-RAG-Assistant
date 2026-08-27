@@ -63,6 +63,7 @@ export default function App() {
   const loadSession = async (sessionId) => {
     try {
       setActiveSessionId(sessionId);
+      setUploadStatus(null); // Clear upload banner from previous session
       const detail = await getSessionDetail(sessionId);
       setSessionDetail(detail);
     } catch (err) {
@@ -73,6 +74,7 @@ export default function App() {
   // 3. Create New Chat
   const handleNewChat = async () => {
     try {
+      setUploadStatus(null); // Clear upload banner when starting new chat
       const newSession = await createSession();
       setSessions((prev) => [newSession, ...prev]);
       setActiveSessionId(newSession.session_id);
@@ -212,7 +214,7 @@ export default function App() {
         sx={{
           flexGrow: 1,
           p: { xs: 2, md: 4 },
-          pb: { xs: 26, md: 32 },
+          pb: { xs: 16, md: 20 },
           position: 'relative',
           zIndex: 1,
           transition: 'margin 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
