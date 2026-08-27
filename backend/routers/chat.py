@@ -37,12 +37,17 @@ async def chat_with_session(session_id: str, request: ChatRequest) -> ChatRespon
         )
 
     try:
+        existing_messages = session_detail.get("messages", [])
         question_embedding = embedding_service.generate_embeddings([request.question])[0]
         chunks = search_service.search_session_chunks(
             question_embedding,
             session_id=session_id,
         )
-        answer = chat_service.generate_answer(request.question, chunks)
+        answer = chat_service.generate_answer(
+            request.question,
+            chunks,
+            history=existing_messages,
+        )
 
         session_service.append_chat_message(
             session_id,

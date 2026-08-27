@@ -1,9 +1,12 @@
 import React from 'react';
-import { Paper, Box, Typography, Chip, Stack, Button } from '@mui/material';
+import { Paper, Box, Typography, Chip, Stack, Button, Tooltip } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LayersIcon from '@mui/icons-material/Layers';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import ThreeBackgroundCanvas from './ThreeBackgroundCanvas';
+import logoImg from '../assets/logo.avif';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -13,32 +16,35 @@ const getGreeting = () => {
 };
 
 /**
- * HeroHeader component displaying session title, dynamic time greeting, and model badges.
+ * Glorified HeroHeader component with embedded Three.js 3D RAG canvas,
+ * dynamic model badges, custom logo, and high-tech glassmorphism styling.
  */
 export default function HeroHeader({
   title = 'New chat',
   updatedAt,
   chunkCount = 0,
-  chatModel = '—',
-  embedModel = '—',
+  chatModel = 'gpt-4.1-mini',
+  embedModel = 'text-embedding-3-small',
   onDelete,
 }) {
   return (
-    <Box sx={{ mb: 2.5, animation: 'fadeInScale 0.4s ease-out forwards' }}>
+    <Box sx={{ mb: 3, animation: 'fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards', position: 'relative' }}>
       <Paper
         elevation={0}
         sx={{
-          p: 3,
+          p: { xs: 2.5, md: 3.5 },
           borderRadius: 4,
-          background: 'linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(255, 255, 255, 0.95) 40%, rgba(249, 115, 22, 0.06) 100%)',
-          border: '1px solid #e2e8f0',
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.94) 0%, rgba(30, 41, 59, 0.92) 100%)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
+          boxShadow: '0 12px 40px rgba(0, 0, 0, 0.25)',
+          color: '#ffffff',
           transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
           '&:hover': {
-            boxShadow: '0 8px 30px rgba(22, 163, 74, 0.1)',
-            borderColor: '#cbd5e1',
+            boxShadow: '0 16px 50px rgba(34, 197, 94, 0.2)',
+            borderColor: 'rgba(34, 197, 94, 0.4)',
           },
           '&::before': {
             content: '""',
@@ -47,137 +53,147 @@ export default function HeroHeader({
             left: 0,
             right: 0,
             height: '3px',
-            background: 'linear-gradient(90deg, #16a34a, #4ade80, #f97316, #16a34a)',
+            background: 'linear-gradient(90deg, #16a34a, #4ade80, #06b6d4, #f97316, #16a34a)',
             backgroundSize: '200% 100%',
             animation: 'shimmerFlow 3.5s linear infinite',
+            zIndex: 2,
           },
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-          {/* Title, Greeting and Timestamp */}
-          <Box>
-            <Typography
-              variant="h5"
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                color: '#0f172a',
-                fontWeight: 900,
-              }}
-            >
-              <ChatIcon sx={{ color: '#16a34a', transition: 'transform 0.2s ease', '&:hover': { transform: 'rotate(15deg) scale(1.1)' } }} />
-              <span style={{ background: 'linear-gradient(135deg, #16a34a 0%, #059669 50%, #f97316 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        {/* Three.js 3D Background Canvas Layer inside Hero Card */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -40,
+            right: -60,
+            width: { xs: '100%', sm: 480 },
+            height: 280,
+            opacity: 0.75,
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        >
+          <ThreeBackgroundCanvas height="100%" interactive={true} />
+        </Box>
+
+        {/* Content Container on Top of 3D Canvas */}
+        <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+          {/* Title, Logo Avatar & Timestamp */}
+          <Box sx={{ maxWidth: { xs: '100%', md: '65%' } }}>
+            <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
+              <Box
+                component="img"
+                src={logoImg}
+                alt="DocSpring Logo"
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid #22c55e',
+                  boxShadow: '0 0 16px rgba(34, 197, 94, 0.5)',
+                }}
+              />
+              <Typography
+                variant="h4"
+                sx={{
+                  fontSize: { xs: '1.4rem', md: '1.75rem' },
+                  fontWeight: 900,
+                  letterSpacing: '-0.02em',
+                  background: 'linear-gradient(135deg, #ffffff 0%, #4ade80 60%, #06b6d4 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
                 {title}
-              </span>
-            </Typography>
+              </Typography>
+            </Stack>
 
             <Typography
               variant="caption"
-              sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#64748b', mt: 1, fontWeight: 600, fontSize: '0.82rem' }}
+              sx={{ display: 'flex', alignItems: 'center', gap: 0.8, color: '#94a3b8', mt: 1, fontWeight: 600, fontSize: '0.82rem' }}
             >
-              <AccessTimeIcon fontSize="inherit" sx={{ color: '#ea580c' }} />
-              <b>{getGreeting()}</b> &bull; {updatedAt ? new Date(updatedAt).toLocaleString() : 'Just now'}
+              <AccessTimeIcon fontSize="inherit" sx={{ color: '#f97316' }} />
+              <b style={{ color: '#38bdf8' }}>{getGreeting()}</b> &bull; {updatedAt ? new Date(updatedAt).toLocaleString() : 'Just now'}
             </Typography>
           </Box>
 
-          {/* Model Info & Chunks Badges */}
-          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
-            {/* Model Info Chip */}
-            <Box
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 1,
-                px: 1.5,
-                py: 0.7,
-                backgroundColor: '#f0fdf4',
-                border: '1px solid #d1fae5',
-                borderRadius: '20px',
-                fontSize: '0.78rem',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  backgroundColor: '#dcfce7',
-                  transform: 'scale(1.04)',
-                },
-              }}
-            >
+          {/* Azure AI Model & Chunks Badges */}
+          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ zIndex: 2 }}>
+            {/* Chat Model Chip */}
+            <Tooltip title="Azure AI Foundry Chat Deployment">
               <Box
                 sx={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  backgroundColor: '#22c55e',
-                  boxShadow: '0 0 6px rgba(34, 197, 94, 0.8)',
-                  animation: 'pulseGlow 2s infinite ease-in-out',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  px: 1.8,
+                  py: 0.8,
+                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                  border: '1px solid rgba(34, 197, 94, 0.4)',
+                  borderRadius: '20px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#4ade80',
+                  boxShadow: '0 2px 10px rgba(34, 197, 94, 0.2)',
                 }}
-              />
-              <Typography variant="caption" sx={{ color: '#52796f', fontWeight: 600 }}>
-                Chat:
-              </Typography>
-              <Chip
-                label={chatModel}
-                size="small"
-                sx={{ height: 20, fontSize: '0.72rem', fontWeight: 700, backgroundColor: '#dcfce7', color: '#15803d' }}
-              />
-              <Typography variant="caption" sx={{ color: '#52796f', fontWeight: 600 }}>
-                Embed:
-              </Typography>
-              <Chip
-                label={embedModel}
-                size="small"
-                sx={{ height: 20, fontSize: '0.72rem', fontWeight: 700, backgroundColor: '#dcfce7', color: '#15803d' }}
-              />
-            </Box>
+              >
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#22c55e', boxShadow: '0 0 8px #22c55e' }} />
+                <span>{chatModel || 'gpt-4.1-mini'}</span>
+              </Box>
+            </Tooltip>
 
-            {/* Chunks Indexed Badge */}
-            <Chip
-              icon={<LayersIcon style={{ fontSize: 14, color: '#16a34a' }} />}
-              label={`${chunkCount} chunks indexed`}
-              variant="outlined"
-              sx={{
-                borderColor: '#bbf7d0',
-                backgroundColor: '#f0fdf4',
-                color: '#15803d',
-                fontWeight: 700,
-                fontSize: '0.78rem',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  backgroundColor: '#dcfce7',
-                  transform: 'scale(1.04)',
-                  borderColor: '#86efac',
-                },
-              }}
-            />
+            {/* Chunks Badge */}
+            <Tooltip title="Total Vector Indexed Chunks in Session">
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.8,
+                  px: 1.8,
+                  py: 0.8,
+                  backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                  border: '1px solid rgba(249, 115, 22, 0.4)',
+                  borderRadius: '20px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#fb923c',
+                }}
+              >
+                <LayersIcon style={{ fontSize: 15 }} />
+                <span>{chunkCount} Chunks</span>
+              </Box>
+            </Tooltip>
+
+            {/* Delete Session Action */}
+            {onDelete && (
+              <Tooltip title="Delete Chat Session">
+                <Button
+                  size="small"
+                  onClick={onDelete}
+                  startIcon={<DeleteIcon fontSize="small" />}
+                  sx={{
+                    color: '#f87171',
+                    borderColor: 'rgba(248, 113, 113, 0.3)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderRadius: '20px',
+                    px: 1.5,
+                    py: 0.7,
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    '&:hover': {
+                      backgroundColor: 'rgba(239, 68, 68, 0.25)',
+                      borderColor: '#f87171',
+                    },
+                  }}
+                >
+                  Delete
+                </Button>
+              </Tooltip>
+            )}
           </Stack>
         </Box>
       </Paper>
-
-      {/* Delete Button */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-        <Button
-          size="small"
-          variant="outlined"
-          color="error"
-          startIcon={<DeleteIcon />}
-          onClick={onDelete}
-          sx={{
-            borderRadius: 2.5,
-            fontWeight: 700,
-            backgroundColor: '#fee2e2',
-            borderColor: '#fca5a5',
-            color: '#b91c1c',
-            transition: 'all 0.2s ease',
-            '&:hover': {
-              backgroundColor: '#fecaca',
-              borderColor: '#ef4444',
-              transform: 'scale(1.03)',
-            },
-          }}
-        >
-          Delete Chat
-        </Button>
-      </Box>
     </Box>
   );
 }

@@ -174,7 +174,19 @@ export default function App() {
   const totalChunks = documents.reduce((acc, d) => acc + (d.chunks_indexed || d.chunk_count || 0), 0);
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        backgroundColor: '#090d16',
+        backgroundImage: `
+          radial-gradient(at 0% 0%, rgba(34, 197, 94, 0.08) 0px, transparent 50%),
+          radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+          radial-gradient(at 50% 100%, rgba(249, 115, 22, 0.05) 0px, transparent 50%)
+        `,
+        color: '#f8fafc',
+      }}
+    >
       {/* Sidebar Navigation */}
       <Sidebar
         sessions={sessions}
@@ -185,7 +197,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3, pb: 14, overflowX: 'hidden' }}>
+      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 4 }, pb: 16, overflowX: 'hidden' }}>
         <Container maxWidth="lg">
           {/* Top Hero Card Widget */}
           <HeroHeader
